@@ -177,12 +177,14 @@ locale, and its repository/author metadata, so it can be listed by a DSH plugin
 index. Publish the GitHub repository, tag the release (`v0.1.0`), then either
 publish to npm or feed the Git URL to the reference index generator:
 
+A ready index lives at `site/index.json`; regenerate it after a release with:
+
 ```bash
 pnpm --filter @deepseek-ai/dsh-plugin-market-generator start \
   --input plugins.txt --output site/index.json --title "Chat Answer TTS"
 ```
 
-Serve `site/index.json` and `site/icons/` over HTTPS and add the index URL under
+Serve the `site/` directory over HTTPS and add its `index.json` URL under
 **Plugins → Discover**. See the
 [plugin index guide](https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market).
 
