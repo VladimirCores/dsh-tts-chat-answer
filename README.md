@@ -1,7 +1,7 @@
-# dsh-tts-chat-answer
+# TTS Chat Answer
 
-Narrate every completed assistant answer from DeepSeek Harness and save the
-audio locally. Each turn becomes:
+`dsh-tts-chat-answer` narrates every completed assistant answer from DeepSeek
+Harness and saves the audio locally. Each turn becomes:
 
 ```
 ~/.local/share/dsh-tts-chat-answer/
