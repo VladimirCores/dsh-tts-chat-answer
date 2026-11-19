@@ -1,0 +1,24 @@
+{
+  "name": "@local/dsh-tts-archive",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Narrate every completed assistant answer with Edge TTS and save the audio locally.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT"
+}
