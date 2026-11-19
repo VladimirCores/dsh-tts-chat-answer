@@ -102,7 +102,9 @@ audio for the primary voice.
 The package is a profile **bundle**. Install it from the checkout:
 
 ```bash
-dsh plugin --profile web add /absolute/path/to/plugins/dsh-tts-chat-answer
+cd /absolute/path/to/plugins/dsh-tts-chat-answer
+npm install
+dsh plugin --profile web add .
 ```
 
 `dsh plugin add` installs the dependency and normally selects the bundle in
