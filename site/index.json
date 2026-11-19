@@ -18,11 +18,11 @@
       "versions": [
         {
           "version": "0.1.0",
-          "publishTimestamp": 1795107448,
+          "publishTimestamp": 1795107934,
           "source": {
             "type": "git",
             "url": "https://github.com/VladimirCores/dsh-tts-chat-answer",
-            "commit": "d58952b59bd3b05f3b2cfe3d48e3c04459a5068d"
+            "commit": "f6c1f6d0eee9f71dea7a8c1f8f209b0fff1c5f57"
           },
           "engines": {
             "dsh": ">=0.2.1-rc.2 <0.3.0"
