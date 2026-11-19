@@ -111,6 +111,18 @@ GET /dsh-tts-chat-answer/status?session=<session-id>&turn=<turn>
 While the MP3 is being generated it shows `Generating…`; once ready it shows
 `Play`. The host reports `playMode` in the same response.
 
+Messages that existed before the plugin was installed have no MP3, so their
+control shows `Generate` instead of `Play`. Clicking it narrates that existing
+answer and then polls until the audio is ready:
+
+```text
+POST /dsh-tts-chat-answer/generate
+{"session":"<session-id>","turn":<turn>}
+```
+
+A turn whose last attempt failed shows `Retry`. Generation uses the same queue,
+voice, and output layout as automatic narration.
+
 `playMode: "inline"` (the default) plays in the Web UI through one shared
 `HTMLAudioElement`. The control becomes `Pause` while playing and `Resume`
 while paused; a `Stop` button resets it. Pressing Play on another answer stops
