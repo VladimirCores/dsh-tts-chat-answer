@@ -175,7 +175,15 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
         return undefined;
       },
     },
+    sessions: {
+      get(id) {
+        return id === "session-1"
+          ? { id, header: { id }, log: [] }
+          : undefined;
+      },
+    },
   };
+
   const ctx = {
     on() {
       return () => {};
@@ -194,6 +202,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   apply(ctx, { enabled: true, outputDir: root, openCommand: "/bin/true" });
   assert.deepEqual([...routes.keys()].sort(), [
     "/dsh-tts-chat-answer/audio",
+    "/dsh-tts-chat-answer/generate",
     "/dsh-tts-chat-answer/open",
     "/dsh-tts-chat-answer/playback",
     "/dsh-tts-chat-answer/status",
@@ -238,6 +247,28 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   const missing = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=2`).then((response) => response.json());
   assert.equal(missing.state, "missing");
 
+  const generatedReady = await fetch(`${origin}/dsh-tts-chat-answer/generate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  });
+  assert.equal(generatedReady.status, 200);
+  assert.deepEqual(await generatedReady.json(), { ok: true, state: "ready" });
+
+  const generatedUnknown = await fetch(`${origin}/dsh-tts-chat-answer/generate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-unknown", turn: 1 }),
+  });
+  assert.equal(generatedUnknown.status, 404);
+
+  const generatedNoAnswer = await fetch(`${origin}/dsh-tts-chat-answer/generate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 2 }),
+  });
+  assert.equal(generatedNoAnswer.status, 422);
+
   const opened = await fetch(`${origin}/dsh-tts-chat-answer/open`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -254,6 +285,102 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ session: "session-1", turn: 1 }),
   })).status, 401);
+  assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/generate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 2 }),
+  })).status, 401);
+});
+
+test("generate route synthesizes audio for a turn whose chat predates the plugin", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "dsh-tts-generate-"));
+  const bin = await mkdtemp(join(tmpdir(), "dsh-tts-fake-edge-"));
+  const fakeEdge = join(bin, "edge-tts");
+  await writeFile(fakeEdge, `#!/usr/bin/env node
+const fs = require("node:fs");
+const args = process.argv.slice(2);
+const at = args.indexOf("--write-media");
+fs.writeFileSync(args[at + 1], "ID3fake");
+`, { mode: 0o755 });
+  await chmod(fakeEdge, 0o755);
+
+  const answer = "This answer predates the plugin, so it only gains audio when someone asks for it.";
+  const session = {
+    id: "session-old",
+    header: { id: "session-old", cwd: "/home/me/Projects/Old" },
+    log: [{
+      type: "assistant/message",
+      seq: 1,
+      data: { turn: 2, step: 1, message: { content: [{ type: "text", text: answer }] } },
+    }],
+  };
+
+  const routes = new Map();
+  const webCtx = {
+    effect(factory) { factory(); return () => {}; },
+    webServer: {
+      register(candidate) { routes.set(candidate.path, candidate); return () => {}; },
+    },
+    connection: { requestRejection() { return undefined; } },
+    sessions: {
+      get(id) { return id === "session-old" ? session : undefined; },
+    },
+  };
+  const ctx = {
+    on() { return () => {}; },
+    effect(factory) { factory(); return () => {}; },
+    inject(_deps, callback) { callback(webCtx); return () => {}; },
+    logger: { info() {}, warn() {}, error() {} },
+  };
+  const plugin = apply(ctx, {
+    enabled: true,
+    outputDir: root,
+    engine: "edge",
+    edgeTtsCommand: fakeEdge,
+    chunkChars: 1200,
+    minChars: 1,
+    timeoutMs: 60000,
+  });
+
+  const server = createServer((req, res) => {
+    const path = new URL(req.url ?? "/", "http://localhost").pathname;
+    const route = routes.get(path);
+    if (route === undefined) { res.statusCode = 404; res.end(); return; }
+    void route.handler(req, res);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+    await rm(root, { recursive: true, force: true });
+    await rm(bin, { recursive: true, force: true });
+  });
+  const origin = `http://127.0.0.1:${String(server.address().port)}`;
+  const generate = (body) => fetch(`${origin}/dsh-tts-chat-answer/generate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const queued = await generate({ session: "session-old", turn: 2 });
+  assert.equal(queued.status, 200);
+  assert.deepEqual(await queued.json(), { ok: true, state: "queued" });
+
+  await plugin.whenIdle();
+
+  const status = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-old&turn=2`)
+    .then((response) => response.json());
+  assert.equal(status.state, "ready");
+  const audio = await fetch(`${origin}/dsh-tts-chat-answer/audio?session=session-old&turn=2`);
+  assert.equal(audio.status, 200);
+  assert.equal(Buffer.from(await audio.arrayBuffer()).toString(), "ID3fake");
+
+  const again = await generate({ session: "session-old", turn: 2 });
+  assert.deepEqual(await again.json(), { ok: true, state: "ready" });
+
+  const noAnswer = await generate({ session: "session-old", turn: 7 });
+  assert.equal(noAnswer.status, 422);
+  const unknown = await generate({ session: "session-unknown", turn: 2 });
+  assert.equal(unknown.status, 404);
 });
 
 test("native playback matches one MPRIS player and stops it", async (t) => {
@@ -592,6 +719,18 @@ test("client bundle registers the turn-tail Play control", async () => {
   assert.equal(registrations[0].registration.options.id, "tts-chat-answer");
   assert.equal(registrations[0].registration.options.name, "conversation.chat.turnTail");
   assert.equal(typeof registrations[0].registration.component, "function");
+
+  const idle = {
+    active: false, playing: false, inlineLoading: false,
+    busyAction: false, generating: false, playbackError: null,
+  };
+  const { controlLabel } = exported.__test;
+  assert.equal(controlLabel({ state: "missing" }, idle), "Generate");
+  assert.equal(controlLabel({ state: "error" }, idle), "Retry");
+  assert.equal(controlLabel({ state: "ready" }, idle), "Play");
+  assert.equal(controlLabel({ state: "ready" }, { ...idle, active: true, playing: true }), "Pause");
+  assert.equal(controlLabel({ state: "queued" }, idle), "Generating…");
+  assert.equal(controlLabel({ state: "missing" }, { ...idle, generating: true }), "Generating…");
 });
 
 test("client inline player shares one audio element and resets on stop", async () => {
