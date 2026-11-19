@@ -179,20 +179,24 @@ disable it.
 
 ## Plugin market
 
-The package declares `dsh.bundle`, an `engines.dsh` range, an icon, an English
-locale, and its repository/author metadata, so it can be listed by a DSH plugin
-index. A ready index lives at `site/index.json`; regenerate it after a release
-with the reference generator:
+The package is published on npm as `dsh-tts-chat-answer` and declares
+`dsh.bundle`, an `engines.dsh` range, an icon, an English locale, and its
+repository/author metadata, so a DSH plugin index can list it.
+
+`site/index.json` is deployed by `.github/workflows/pages.yml` and served at
+<https://vladimircores.github.io/dsh-tts-chat-answer/>. Add
+`https://vladimircores.github.io/dsh-tts-chat-answer/index.json` under
+**Plugins → Discover → Add index source**.
+
+Regenerate the entry with the reference generator after a release:
 
 ```bash
 pnpm --filter @deepseek-ai/dsh-plugin-market-generator start \
   --input plugins.txt --output site/index.json --title "TTS Chat Answer"
 ```
 
-`plugins.txt` holds one line per source: the Git URL gives a commit-pinned
-entry, while `dsh-tts-chat-answer` gives an npm entry after the package is
-published. Serve the `site/` directory over HTTPS and add its `index.json` URL
-under **Plugins → Discover**. See the
+`plugins.txt` holds one line per source: the npm name produces an npm entry; an
+`https://` Git URL produces a commit-pinned entry instead. See the
 [plugin index guide](https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market).
 
 ## Publish a release
