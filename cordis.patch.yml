@@ -1,0 +1,24 @@
+# Profile bundle layer: insert this plugin into whatever profile selects the bundle.
+# Selecting the bundle is the opt-in act; the row is active once selected.
+- insert:
+    - id: tts-archive
+      name: '@local/dsh-tts-archive'
+      disabled: false
+      config:
+        enabled: true
+        outputDir: '~/.local/share/minke/tts'
+        groupByWorkspace: true
+        engine: 'edge'
+        voice: 'en-US-AndrewNeural'
+        rate: '+10%'
+        volume: '+0%'
+        pitch: '+0Hz'
+        minChars: 40
+        maxChars: 12000
+        chunkChars: 1200
+        concurrency: 2
+        timeoutMs: 600000
+        includeSubagents: false
+        includeIncomplete: false
+        keepTranscript: true
+        redactSecrets: true
