@@ -138,7 +138,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     audio,
   })}\n`);
 
-  let route;
+  const routes = new Map();
   const webCtx = {
     effect(factory) {
       factory();
@@ -146,7 +146,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     },
     webServer: {
       register(candidate) {
-        route = candidate;
+        routes.set(candidate.path, candidate);
         return () => {};
       },
     },
@@ -171,10 +171,21 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     logger: { info() {}, warn() {}, error() {} },
   };
 
-  apply(ctx, { outputDir: root });
-  assert.equal(route.path, "/dsh-tts-archive/audio");
+  apply(ctx, { outputDir: root, openCommand: "/bin/true" });
+  assert.deepEqual([...routes.keys()].sort(), [
+    "/dsh-tts-archive/audio",
+    "/dsh-tts-archive/open",
+    "/dsh-tts-archive/status",
+  ]);
 
   const server = createServer((req, res) => {
+    const path = new URL(req.url ?? "/", "http://localhost").pathname;
+    const route = routes.get(path);
+    if (route === undefined) {
+      res.statusCode = 404;
+      res.end();
+      return;
+    }
     void route.handler(req, res);
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -201,8 +212,27 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
 
   assert.equal((await fetch(`${origin}/dsh-tts-archive/audio?session=session-1&turn=2`)).status, 404);
 
+  const status = await fetch(`${origin}/dsh-tts-archive/status?session=session-1&turn=1`).then((response) => response.json());
+  assert.deepEqual(status, { state: "ready", bytes: bytes.length });
+  const missing = await fetch(`${origin}/dsh-tts-archive/status?session=session-1&turn=2`).then((response) => response.json());
+  assert.equal(missing.state, "missing");
+
+  const opened = await fetch(`${origin}/dsh-tts-archive/open`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  });
+  assert.equal(opened.status, 200);
+  assert.deepEqual(await opened.json(), { ok: true });
+
   webCtx.connection.requestRejection = () => 401;
   assert.equal((await fetch(target)).status, 401);
+  assert.equal((await fetch(`${origin}/dsh-tts-archive/status?session=session-1&turn=1`)).status, 401);
+  assert.equal((await fetch(`${origin}/dsh-tts-archive/open`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  })).status, 401);
 });
 
 function mockCtx() {
@@ -393,7 +423,7 @@ test("subagent turns are skipped unless explicitly enabled", async () => {
   }
 });
 
-test("client bundle registers the turn-tail Play/Stop control", async () => {
+test("client bundle registers the turn-tail Play control", async () => {
   const reactMock = {
     createElement() {},
     useCallback: (callback) => callback,
