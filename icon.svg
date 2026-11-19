@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
-  <path d="M22 38a16 16 0 0 1 16-16h32a16 16 0 0 1 16 16v26a16 16 0 0 1-16 16H60L42 94V80h-4a16 16 0 0 1-16-16V38Z" stroke="#4F46E5" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M91 87l24 14-24 14V87Z" fill="#4F46E5" stroke="#4F46E5" stroke-width="3" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="tts-play-gradient" x1="16" y1="8" x2="112" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#86E4FB"/>
+      <stop offset="1" stop-color="#74ADFA"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="44.5" stroke="url(#tts-play-gradient)" stroke-width="39"/>
+  <path d="M49 48l29.5 18.5L49 85V48Z" fill="url(#tts-play-gradient)"/>
 </svg>
