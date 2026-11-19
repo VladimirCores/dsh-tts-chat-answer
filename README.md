@@ -4,7 +4,7 @@ Narrate every completed assistant answer from DeepSeek Harness and save the
 audio locally. Each turn becomes:
 
 ```
-~/.local/share/minke/tts/
+~/.local/share/dsh-tts-chat-answer/
 ├── .ready                          # written when the plugin mounts
 ├── index.jsonl                     # global one-line-per-job index (includes workspace)
 └── HPDC-7c1e9a02/                  # workspace basename + short cwd hash
@@ -115,7 +115,7 @@ to `dsh.profile.bundles`:
     "profile": {
       "bundles": [
         "@deepseek-ai/dsh-base",
-        "@local/dsh-tts-chat-answer"
+        "dsh-tts-chat-answer"
       ]
     }
   }
@@ -127,10 +127,10 @@ Alternatively, insert it directly in `~/.dsh/profiles/web/cordis.patch.yml`:
 ```yaml
 - insert:
     - id: tts-chat-answer
-      name: '@local/dsh-tts-chat-answer'
+      name: 'dsh-tts-chat-answer'
       config:
         enabled: true
-        outputDir: '~/.local/share/minke/tts'
+        outputDir: '~/.local/share/dsh-tts-chat-answer'
         engine: 'edge'
         playMode: 'inline'
         voice: 'en-US-AriaNeural'
@@ -142,7 +142,7 @@ not always hot-add a new module row; restarting is deterministic. After restart,
 this file proves the plugin mounted:
 
 ```bash
-cat ~/.local/share/minke/tts/.ready
+cat ~/.local/share/dsh-tts-chat-answer/.ready
 ```
 
 Remove the bundle from `dsh.profile.bundles` (or set `enabled: false`) to
@@ -170,6 +170,22 @@ patch file is created before each write. The script does not install the
 package; install it first with `dsh plugin add`, then run setup and restart the
 Host.
 
+## Plugin market
+
+The package declares `dsh.bundle`, an `engines.dsh` range, an icon, an English
+locale, and its repository/author metadata, so it can be listed by a DSH plugin
+index. Publish the GitHub repository, tag the release (`v0.1.0`), then either
+publish to npm or feed the Git URL to the reference index generator:
+
+```bash
+pnpm --filter @deepseek-ai/dsh-plugin-market-generator start \
+  --input plugins.txt --output site/index.json --title "Chat Answer TTS"
+```
+
+Serve `site/index.json` and `site/icons/` over HTTPS and add the index URL under
+**Plugins → Discover**. See the
+[plugin index guide](https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market).
+
 ## Requirements
 
 - `edge-tts` for the default engine. It is installed at
@@ -186,8 +202,8 @@ Host.
 
 | key | default | meaning |
 |---|---|---|
-| `enabled` | `true` | Master switch. |
-| `outputDir` | `~/.local/share/minke/tts` | Root for audio, transcripts, metadata, index. |
+| `enabled` | `false` | Master switch. The shipped bundle defaults to off; enable it explicitly. |
+| `outputDir` | `~/.local/share/dsh-tts-chat-answer` | Root for audio, transcripts, metadata, index. |
 | `groupByWorkspace` | `true` | Put each workspace in `<basename>-<cwd-hash>/`; `false` writes `<date>/` directly. |
 | `engine` | `edge` | `edge` (neural, online) or `espeak` (robotic, local). |
 | `playMode` | `inline` | `inline` (in-page audio, default) or `native` (system app with MPRIS control and in-page fallback). |
@@ -211,6 +227,9 @@ Host.
 
 ## Privacy
 
+The bundle ships disabled so installing it does not immediately send chat
+answers anywhere. Enable it explicitly (the setup prompt asks) before use.
+
 `engine: "edge"` sends the **speech script of every assistant answer** to
 Microsoft's Edge TTS service. `redactSecrets` and code-block omission reduce
 exposure but are not a guarantee. If responses may contain confidential data,
@@ -219,7 +238,8 @@ use `engine: "espeak"` (fully local) or disable the plugin.
 ## Test
 
 ```bash
-node plugins/dsh-tts-chat-answer/test/plugin.test.mjs
+npm install
+npm test
 ```
 
 The integration test performs a real Edge TTS synthesis (about 20 seconds).

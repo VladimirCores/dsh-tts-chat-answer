@@ -4,10 +4,21 @@ import { createServer } from "node:http";
 import { chmod, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { apply, __test } from "../lib/index.js";
+import { apply, Config, name as pluginName, __test } from "../lib/index.js";
 
 const EDGE_TTS = process.env.EDGE_TTS ?? "/home/cores/.local/bin/edge-tts";
 const FFMPEG = process.env.FFMPEG ?? "/usr/bin/ffmpeg";
+
+test("plugin name and Config schema match the published contract", () => {
+  assert.equal(pluginName, "dsh-tts-chat-answer");
+  assert.deepEqual(
+    { enabled: Config({}).enabled, playMode: Config({}).playMode, engine: Config({}).engine },
+    { enabled: false, playMode: "inline", engine: "edge" },
+  );
+  assert.throws(() => Config({ engine: "invalid" }), /engine/u);
+  assert.throws(() => Config({ minChars: 0 }), /minChars/u);
+  assert.throws(() => Config({ rate: "10" }), /rate/u);
+});
 
 test("toSpeechText removes code, links, tables, and markdown noise", () => {
   const input = [
@@ -180,7 +191,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     logger: { info() {}, warn() {}, error() {} },
   };
 
-  apply(ctx, { outputDir: root, openCommand: "/bin/true" });
+  apply(ctx, { enabled: true, outputDir: root, openCommand: "/bin/true" });
   assert.deepEqual([...routes.keys()].sort(), [
     "/dsh-tts-chat-answer/audio",
     "/dsh-tts-chat-answer/open",
@@ -303,7 +314,7 @@ process.exit(1);
     inject(_deps, callback) { callback(webCtx); return () => {}; },
     logger: { info() {}, warn() {}, error() {} },
   };
-  apply(ctx, { outputDir: root, playMode: "native", openCommand: "/bin/true" });
+  apply(ctx, { enabled: true, outputDir: root, playMode: "native", openCommand: "/bin/true" });
 
   const server = createServer((req, res) => {
     const path = new URL(req.url ?? "/", "http://localhost").pathname;
@@ -413,6 +424,7 @@ test("integration: completed turn produces audio, transcript, metadata, and inde
 
   const ctx = mockCtx();
   const plugin = apply(ctx, {
+    enabled: true,
     outputDir: dir,
     engine: "edge",
     edgeTtsCommand: EDGE_TTS,
@@ -477,6 +489,7 @@ test("dedupe: the same session/turn is only narrated once", async (t) => {
 
   const ctx = mockCtx();
   const plugin = apply(ctx, {
+    enabled: true,
     outputDir: dir,
     engine: "edge",
     edgeTtsCommand: EDGE_TTS,
@@ -504,6 +517,7 @@ test("subagent turns are skipped unless explicitly enabled", async () => {
   try {
     const ctx = mockCtx();
     const plugin = apply(ctx, {
+      enabled: true,
       outputDir: dir,
       engine: "edge",
       edgeTtsCommand: EDGE_TTS,

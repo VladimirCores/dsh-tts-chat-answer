@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Chat Answer TTS",
+    "description": "Narrate completed Harness answers, save the audio locally, and play it in-page or in a native MPRIS player."
+  }
+}

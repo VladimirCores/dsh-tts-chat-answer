@@ -19,7 +19,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PLUGIN = "@local/dsh-tts-chat-answer";
+const PLUGIN = "dsh-tts-chat-answer";
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const MARK_START = "# >>> dsh-tts-chat-answer setup >>>";
 const MARK_END = "# <<< dsh-tts-chat-answer setup <<<";
@@ -43,8 +43,8 @@ const EDGE_VOICES = Object.freeze([
 ]);
 
 const DEFAULTS = Object.freeze({
-  enabled: true,
-  outputDir: "~/.local/share/minke/tts",
+  enabled: false,
+  outputDir: "~/.local/share/dsh-tts-chat-answer",
   groupByWorkspace: true,
   engine: "edge",
   playMode: "inline",

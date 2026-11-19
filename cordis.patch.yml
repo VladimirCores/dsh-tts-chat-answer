@@ -2,11 +2,11 @@
 # Selecting the bundle is the opt-in act; the row is active once selected.
 - insert:
     - id: tts-chat-answer
-      name: '@local/dsh-tts-chat-answer'
+      name: 'dsh-tts-chat-answer'
       disabled: false
       config:
-        enabled: true
-        outputDir: '~/.local/share/minke/tts'
+        enabled: false
+        outputDir: '~/.local/share/dsh-tts-chat-answer'
         groupByWorkspace: true
         engine: 'edge'
         playMode: 'inline'
