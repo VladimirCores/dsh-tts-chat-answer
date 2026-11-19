@@ -25,20 +25,33 @@ tables, links and code fences are converted to spoken prose; code blocks are
 replaced with “Code block omitted” rather than read aloud. Intermediate
 tool-call preambles are skipped.
 
-## Play / Stop in the chat
+## Play in the system player
 
 When the Web profile loads this package, each completed turn gains a small
-`Play` / `Stop` control in the completed-turn footer, next to the message
-actions. It streams the saved MP3 from the authenticated Host route:
+control in the completed-turn footer, next to the message actions. It first
+checks the authenticated readiness route:
 
 ```text
-GET /dsh-tts-archive/audio?session=<session-id>&turn=<turn>
+GET /dsh-tts-archive/status?session=<session-id>&turn=<turn>
 ```
 
-The route uses the same browser auth as the rest of the Web app; it is not a
-public static directory. `Play` starts the audio and `Stop` pauses it. Starting
-another turn stops the previous one. If the MP3 has not been generated yet, the
-control shows `No audio`.
+While the MP3 is being generated it shows `Generating…`; once ready it shows
+`Play`. Clicking `Play` calls:
+
+```text
+POST /dsh-tts-archive/open
+{"session":"<session-id>","turn":<turn>}
+```
+
+and asks the Host to hand the saved MP3 to the platform's default audio
+application (`xdg-open` on Linux, `open` on macOS, `start` on Windows). Playback
+controls then belong to that system player; the in-chat control only opens the
+file. `No audio` means no successful MP3 is indexed for that turn, and
+`Audio error` shows the Host failure.
+
+Both routes use the same browser auth as the rest of the Web app; they are not
+public static directories. Set `openCommand` if the platform opener is not on
+`PATH` or needs a custom command.
 
 This package has a Web client half (`lib/client.js`, declared under
 `dsh.client`). Restart Minke/DSH after installing or updating it so the client
@@ -145,6 +158,7 @@ Host.
 | `redactSecrets` | `true` | Best-effort removal of API keys, private keys, JWTs, etc. |
 | `edgeTtsCommand` | `edge-tts` | Override the executable. |
 | `ffmpegCommand` | `ffmpeg` | Override ffmpeg. |
+| `openCommand` | auto | Override the system opener used by `POST /dsh-tts-archive/open`; the path is appended as its only argument. |
 | `espeakCommand` / `espeakVoice` / `espeakRate` | `espeak-ng` / `en-us` / `165` | Local engine settings. |
 
 ## Privacy
