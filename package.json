@@ -1,6 +1,6 @@
 {
   "name": "dsh-tts-chat-answer",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Narrate completed assistant answers with Edge TTS, save audio locally, and play it in-page or in a native MPRIS player.",
   "author": "Vladimir Cores",
   "license": "MIT",
