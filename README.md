@@ -43,6 +43,14 @@ does not always hot-add a new row, so restart the Host; afterwards
 it with `dsh plugin --profile web remove dsh-tts-chat-answer`, or set
 `enabled: false` in the profile patch.
 
+pnpm 11 applies a **24-hour `minimumReleaseAge` cooldown** by default. A version
+published in the last day is listed in the index but still fails to install with
+`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`, and even removing it fails while the
+lockfile holds that version. Wait until the release is a day old, or set
+`minimumReleaseAge: 0` in the profile's `pnpm-workspace.yaml` (for example
+`~/.dsh/profiles/web/pnpm-workspace.yaml`) to install immediately. Restore the
+setting afterwards so later installs keep the cooldown.
+
 ## Setup
 
 After installing, run the interactive setup:
@@ -213,6 +221,10 @@ After the registry accepts the version, prepend it to `site/index.json`: set
 dsh-tts-chat-answer time --json`), and keep `source` as `{"type": "npm"}`. Keep
 earlier versions in the array so the page can install them. The Pages workflow
 republishes `site/` on the next push.
+
+Expect a one-day gap before the new entry is installable: pnpm's default
+24-hour release-age cooldown rejects any version younger than that. The
+[Install](#install) note explains the workaround and when to restore the setting.
 
 ## Requirements
 
