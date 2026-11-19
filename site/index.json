@@ -1,6 +1,8 @@
 {
   "format": 1,
-  "title": { "en": "TTS Chat Answer" },
+  "title": {
+    "en": "TTS Chat Answer"
+  },
   "description": "Narrate completed Harness answers and play the saved audio in-page or in a native MPRIS player.",
   "plugins": [
     {
@@ -10,17 +12,21 @@
       "icon": "icons/dsh-tts-chat-answer.svg",
       "author": "Vladimir Cores",
       "homepage": "https://github.com/VladimirCores/dsh-tts-chat-answer",
-      "repository": { "url": "https://github.com/VladimirCores/dsh-tts-chat-answer" },
+      "repository": {
+        "url": "https://github.com/VladimirCores/dsh-tts-chat-answer"
+      },
       "versions": [
         {
           "version": "0.1.0",
-          "publishTimestamp": 1795103346,
+          "publishTimestamp": 1795103990,
           "source": {
             "type": "git",
             "url": "https://github.com/VladimirCores/dsh-tts-chat-answer",
-            "commit": "ae1ef87d7764bcc00ecbb499fd8cf2585fde2d05"
+            "commit": "3c53b1cc4658912a87ddafb3ee9fbcec91a91ab3"
           },
-          "engines": { "dsh": ">=0.2.1-rc.2 <0.3.0" }
+          "engines": {
+            "dsh": ">=0.2.1-rc.2 <0.3.0"
+          }
         }
       ]
     }
