@@ -224,10 +224,11 @@ npm publish
 git push --follow-tags
 ```
 
-After the registry accepts the version, update `site/index.json`: set
+After the registry accepts the version, prepend it to `site/index.json`: set
 `version`, set `publishTimestamp` to the registry time (`npm view
-dsh-tts-chat-answer time --json`), and keep `source` as `{"type": "npm"}`. The
-Pages workflow republishes `site/` on the next push.
+dsh-tts-chat-answer time --json`), and keep `source` as `{"type": "npm"}`. Keep
+earlier versions in the array so the page can install them. The Pages workflow
+republishes `site/` on the next push.
 
 ## Requirements
 
