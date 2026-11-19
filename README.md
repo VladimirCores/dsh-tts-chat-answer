@@ -25,6 +25,26 @@ tables, links and code fences are converted to spoken prose; code blocks are
 replaced with “Code block omitted” rather than read aloud. Intermediate
 tool-call preambles are skipped.
 
+## Play / Stop in the chat
+
+When the Web profile loads this package, each completed turn gains a small
+`Play` / `Stop` control in the completed-turn footer, next to the message
+actions. It streams the saved MP3 from the authenticated Host route:
+
+```text
+GET /dsh-tts-archive/audio?session=<session-id>&turn=<turn>
+```
+
+The route uses the same browser auth as the rest of the Web app; it is not a
+public static directory. `Play` starts the audio and `Stop` pauses it. Starting
+another turn stops the previous one. If the MP3 has not been generated yet, the
+control shows `No audio`.
+
+This package has a Web client half (`lib/client.js`, declared under
+`dsh.client`). Restart Minke/DSH after installing or updating it so the client
+boot manifest includes the bundle; client-plugin HMR only applies while
+`pnpm run dev:web` is running.
+
 ## Install into a profile
 
 The package is a profile **bundle**. Install it from the checkout:
