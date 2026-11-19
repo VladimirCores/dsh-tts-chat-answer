@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { apply, __test } from "../lib/index.js";
@@ -125,6 +125,15 @@ test("findAudio resolves the newest matching turn inside the output root", async
   assert.equal(await __test.findAudio(root, "s1", 1), undefined);
 });
 
+test("MPRIS parser reads status, position, and metadata", () => {
+  assert.equal(__test.parseMprisString('s "Playing"'), "Playing");
+  assert.equal(__test.parseMprisLong("x 1174879"), 1174879);
+  assert.deepEqual(
+    __test.parseMprisMetadata('a{sv} 3 "mpris:trackid" o "/org/mpris/MediaPlayer2/TrackList/NoTrack" "mpris:length" x 66192000 "xesam:title" s "answer.mp3"'),
+    { title: "answer.mp3", url: undefined, durationMs: 66192 },
+  );
+});
+
 test("host route serves, ranges, authenticates, and reports missing audio", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "dsh-tts-route-"));
   const audio = join(root, "workspace", "2026-11-19", "answer.mp3");
@@ -175,6 +184,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   assert.deepEqual([...routes.keys()].sort(), [
     "/dsh-tts-chat-answer/audio",
     "/dsh-tts-chat-answer/open",
+    "/dsh-tts-chat-answer/playback",
     "/dsh-tts-chat-answer/status",
   ]);
 
@@ -213,7 +223,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/audio?session=session-1&turn=2`)).status, 404);
 
   const status = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=1`).then((response) => response.json());
-  assert.deepEqual(status, { state: "ready", bytes: bytes.length });
+  assert.deepEqual(status, { state: "ready", bytes: bytes.length, playMode: "inline" });
   const missing = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=2`).then((response) => response.json());
   assert.equal(missing.state, "missing");
 
@@ -223,7 +233,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     body: JSON.stringify({ session: "session-1", turn: 1 }),
   });
   assert.equal(opened.status, 200);
-  assert.deepEqual(await opened.json(), { ok: true });
+  assert.deepEqual(await opened.json(), { ok: true, mode: "inline" });
 
   webCtx.connection.requestRejection = () => 401;
   assert.equal((await fetch(target)).status, 401);
@@ -234,6 +244,106 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     body: JSON.stringify({ session: "session-1", turn: 1 }),
   })).status, 401);
 });
+
+test("native playback matches one MPRIS player and stops it", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "dsh-tts-native-"));
+  const audio = join(root, "workspace", "2026-11-19", "answer.mp3");
+  await mkdir(join(root, "workspace", "2026-11-19"), { recursive: true });
+  await writeFile(audio, "fake mp3 bytes");
+  await writeFile(join(root, "index.jsonl"), `${JSON.stringify({
+    status: "done",
+    sessionId: "session-1",
+    turn: 1,
+    audio,
+  })}\n`);
+
+  const bin = await mkdtemp(join(tmpdir(), "dsh-tts-busctl-"));
+  const log = join(bin, "calls.log");
+  await writeFile(join(bin, "busctl"), `#!/usr/bin/env node
+const fs = require("node:fs");
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.FAKE_MPRIS_LOG, args.join(" ") + "\\n");
+const prop = args.at(-1);
+if (args.includes("list")) {
+  console.log("org.mpris.MediaPlayer2.test 1234 test user :1.1 user@1000.service -");
+  process.exit(0);
+}
+if (args.includes("get-property")) {
+  if (prop === "PlaybackStatus") console.log('s "Playing"');
+  else if (prop === "Metadata") console.log('a{sv} 3 "mpris:length" x 1000000 "xesam:title" s "answer.mp3"');
+  else if (prop === "Position") console.log("x 250000");
+  else process.exit(1);
+  process.exit(0);
+}
+if (args.includes("call")) process.exit(0);
+process.exit(1);
+`, { mode: 0o755 });
+  await chmod(join(bin, "busctl"), 0o755);
+  const previousPath = process.env.PATH;
+  process.env.PATH = `${bin}:${previousPath ?? ""}`;
+  process.env.FAKE_MPRIS_LOG = log;
+  t.after(async () => {
+    process.env.PATH = previousPath;
+    delete process.env.FAKE_MPRIS_LOG;
+    await rm(root, { recursive: true, force: true });
+    await rm(bin, { recursive: true, force: true });
+  });
+
+  const routes = new Map();
+  const webCtx = {
+    effect(factory) { factory(); return () => {}; },
+    webServer: {
+      register(candidate) { routes.set(candidate.path, candidate); return () => {}; },
+    },
+    connection: { requestRejection() { return undefined; } },
+  };
+  const ctx = {
+    on() { return () => {}; },
+    effect(factory) { factory(); return () => {}; },
+    inject(_deps, callback) { callback(webCtx); return () => {}; },
+    logger: { info() {}, warn() {}, error() {} },
+  };
+  apply(ctx, { outputDir: root, playMode: "native", openCommand: "/bin/true" });
+
+  const server = createServer((req, res) => {
+    const path = new URL(req.url ?? "/", "http://localhost").pathname;
+    const route = routes.get(path);
+    if (route === undefined) { res.statusCode = 404; res.end(); return; }
+    void route.handler(req, res);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const origin = `http://127.0.0.1:${String(server.address().port)}`;
+
+  const opened = await fetch(`${origin}/dsh-tts-chat-answer/open`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  });
+  assert.equal(opened.status, 200);
+  const body = await opened.json();
+  assert.equal(body.ok, true);
+  assert.equal(body.mode, "native");
+  assert.equal(body.playback.status, "playing");
+  assert.equal(body.playback.positionMs, 250);
+  assert.equal(body.playback.durationMs, 1000);
+
+  const status = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=1`).then((r) => r.json());
+  assert.equal(status.playMode, "native");
+  assert.equal(status.playback.status, "playing");
+
+  const stopped = await fetch(`${origin}/dsh-tts-chat-answer/playback`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1, action: "stop" }),
+  });
+  assert.equal(stopped.status, 200);
+  assert.deepEqual(await stopped.json(), { ok: true });
+  const calls = await readFile(log, "utf8");
+  assert.match(calls, /Player Stop/);
+  assert.match(calls, /MediaPlayer2 Quit/);
+});
+
 
 function mockCtx() {
   const listeners = new Map();
@@ -468,4 +578,97 @@ test("client bundle registers the turn-tail Play control", async () => {
   assert.equal(registrations[0].registration.options.id, "tts-chat-answer");
   assert.equal(registrations[0].registration.options.name, "conversation.chat.turnTail");
   assert.equal(typeof registrations[0].registration.component, "function");
+});
+
+test("client inline player shares one audio element and resets on stop", async () => {
+  class FakeAudio {
+    constructor() {
+      this.listeners = new Map();
+      this.attrs = {};
+      this.currentTime = 0;
+      this.duration = 12;
+      this.paused = true;
+    }
+    addEventListener(type, listener) {
+      const queue = this.listeners.get(type) ?? [];
+      queue.push(listener);
+      this.listeners.set(type, queue);
+    }
+    removeAttribute(name) { delete this.attrs[name]; }
+    getAttribute(name) { return this.attrs[name] ?? null; }
+    set src(value) { this.attrs.src = value; this.emit("loadedmetadata"); }
+    get src() { return this.attrs.src; }
+    load() {}
+    play() {
+      this.paused = false;
+      this.emit("play");
+      this.emit("playing");
+      return Promise.resolve();
+    }
+    pause() {
+      if (!this.paused) {
+        this.paused = true;
+        this.emit("pause");
+      }
+    }
+    emit(type) {
+      for (const listener of this.listeners.get(type) ?? []) listener();
+    }
+  }
+
+  const previousWindow = globalThis.window;
+  const previousAudio = globalThis.Audio;
+  let exported;
+  try {
+    globalThis.Audio = FakeAudio;
+    globalThis.window = {
+      __ModuleLoader__: {
+        load(registration) {
+          exported = registration.factory((specifier) => {
+            if (specifier === "react") {
+              return {
+                createElement() {},
+                useCallback: (callback) => callback,
+                useState: () => [null, () => {}],
+                useEffect() {},
+                useSyncExternalStore: () => false,
+              };
+            }
+            throw new Error(`unexpected client module: ${specifier}`);
+          });
+        },
+      },
+    };
+    await import("../lib/client.js?inline-player=1");
+  } finally {
+    globalThis.window = previousWindow;
+  }
+
+  globalThis.Audio = FakeAudio;
+  try {
+    assert.ok(exported?.__test, "inline player test API missing");
+    const api = exported.__test;
+    api.inlinePlay("s1:1", "/audio?1");
+    assert.equal(api.getInlineSnapshot().key, "s1:1");
+    assert.equal(api.getInlineSnapshot().state, "playing");
+    const audio = api.ensureInlineAudio();
+    audio.currentTime = 2;
+    audio.emit("timeupdate");
+    assert.equal(api.getInlineSnapshot().positionMs, 2000);
+    api.inlinePause();
+    assert.equal(api.getInlineSnapshot().state, "paused");
+    api.inlinePlay("s1:1", "/audio?1");
+    assert.equal(api.getInlineSnapshot().state, "playing");
+    api.inlinePlay("s1:2", "/audio?2");
+    assert.equal(api.getInlineSnapshot().key, "s1:2");
+    audio.currentTime = 12;
+    audio.emit("ended");
+    assert.equal(api.getInlineSnapshot().state, "idle");
+    assert.equal(api.getInlineSnapshot().key, null);
+    api.inlinePlay("s1:2", "/audio?2");
+    api.inlineStop();
+    assert.equal(api.getInlineSnapshot().state, "idle");
+  } finally {
+    globalThis.Audio = previousAudio;
+  }
 });

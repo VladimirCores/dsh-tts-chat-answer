@@ -47,6 +47,7 @@ const DEFAULTS = Object.freeze({
   outputDir: "~/.local/share/minke/tts",
   groupByWorkspace: true,
   engine: "edge",
+  playMode: "inline",
   voice: "en-US-AriaNeural",
   fallbackVoice: "en-US-GuyNeural",
   rate: "+10%",
@@ -284,6 +285,11 @@ async function main() {
       DEFAULTS.groupByWorkspace,
     );
     const engine = await prompt.choice("TTS engine", ["edge", "espeak"], DEFAULTS.engine);
+    const playMode = await prompt.choice(
+      "Playback mode (inline = in-page player, native = system app)",
+      ["inline", "native"],
+      DEFAULTS.playMode,
+    );
 
     let voice = DEFAULTS.voice;
     let fallbackVoice = DEFAULTS.fallbackVoice;
@@ -359,6 +365,7 @@ async function main() {
       outputDir,
       groupByWorkspace,
       engine,
+      playMode,
       voice,
       fallbackVoice,
       rate,
@@ -400,6 +407,7 @@ async function main() {
     stdout.write(`Profile: ${profile}\n`);
     stdout.write(`Output:  ${settings.outputDir}\n`);
     stdout.write(`Engine:  ${settings.engine}${settings.engine === "edge" ? ` (${settings.voice}, ${settings.rate})` : ` (${settings.espeakVoice}, ${settings.espeakRate} wpm)`}\n`);
+    stdout.write(`Playback: ${settings.playMode === "native" ? "native app (with in-page fallback)" : "in-page <audio>"}\n`);
     stdout.write("\nRestart Minke/DSH once, then check:\n");
     stdout.write(`  cat ${join(settings.outputDir.replace(/^~(?=$|\/)/, homedir()), ".ready")}\n`);
     return 0;
@@ -418,6 +426,7 @@ function renderBlock(settings) {
     `    outputDir: ${yamlString(settings.outputDir)}`,
     `    groupByWorkspace: ${settings.groupByWorkspace}`,
     `    engine: ${yamlString(settings.engine)}`,
+    `    playMode: ${yamlString(settings.playMode)}`,
     `    voice: ${yamlString(settings.voice)}`,
     `    fallbackVoice: ${yamlString(settings.fallbackVoice)}`,
     `    rate: ${yamlString(settings.rate)}`,

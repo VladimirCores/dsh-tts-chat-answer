@@ -25,33 +25,48 @@ tables, links and code fences are converted to spoken prose; code blocks are
 replaced with “Code block omitted” rather than read aloud. Intermediate
 tool-call preambles are skipped.
 
-## Play in the system player
+## Playback
 
-When the Web profile loads this package, each completed turn gains a small
-control in the completed-turn footer, next to the message actions. It first
-checks the authenticated readiness route:
+Each completed turn gets a small control in the completed-turn footer, next to
+the message actions. It checks the authenticated readiness route:
 
 ```text
 GET /dsh-tts-chat-answer/status?session=<session-id>&turn=<turn>
 ```
 
 While the MP3 is being generated it shows `Generating…`; once ready it shows
-`Play`. Clicking `Play` calls:
+`Play`. The host reports `playMode` in the same response.
+
+`playMode: "inline"` (the default) plays in the Web UI through one shared
+`HTMLAudioElement`. The control becomes `Pause` while playing and `Resume`
+while paused; a `Stop` button resets it. Pressing Play on another answer stops
+the current one, so only one answer ever plays. No external application is
+opened.
+
+`playMode: "native"` asks the Host to hand the MP3 to the platform's default
+audio application (`xdg-open` on Linux, `open` on macOS, `start` on Windows)
+and reports state through MPRIS:
 
 ```text
 POST /dsh-tts-chat-answer/open
 {"session":"<session-id>","turn":<turn>}
+
+POST /dsh-tts-chat-answer/playback
+{"session":"<session-id>","turn":<turn>,"action":"play|pause|stop"}
 ```
 
-and asks the Host to hand the saved MP3 to the platform's default audio
-application (`xdg-open` on Linux, `open` on macOS, `start` on Windows). Playback
-controls then belong to that system player; the in-chat control only opens the
-file. `No audio` means no successful MP3 is indexed for that turn, and
-`Audio error` shows the Host failure.
+On Linux the Host matches the player by `xesam:title` / `xesam:url`, then uses
+the standard MPRIS `Play`, `Pause`, `Stop`, and `Quit` methods. The UI follows
+`PlaybackStatus`; pressing `Stop`, reaching the end, or starting another answer
+stops and closes the player. Only one native player opened by this plugin is
+tracked at a time. If no controllable MPRIS player appears, the client falls
+back to the in-page player for that turn.
 
-Both routes use the same browser auth as the rest of the Web app; they are not
-public static directories. Set `openCommand` if the platform opener is not on
-`PATH` or needs a custom command.
+MPRIS control is Linux-only. On macOS and Windows native mode still opens the
+default app, but cannot reflect or close it from the chat; choose `inline`
+there. Both playback modes use the same browser auth as the rest of the Web app;
+the audio files are not public static directories. Set `openCommand` if the
+platform opener is not on `PATH` or needs a custom command.
 
 This package has a Web client half (`lib/client.js`, declared under
 `dsh.client`). Restart Minke/DSH after installing or updating it so the client
@@ -117,6 +132,7 @@ Alternatively, insert it directly in `~/.dsh/profiles/web/cordis.patch.yml`:
         enabled: true
         outputDir: '~/.local/share/minke/tts'
         engine: 'edge'
+        playMode: 'inline'
         voice: 'en-US-AriaNeural'
         rate: '+10%'
 ```
@@ -137,7 +153,8 @@ disable it.
 `setup.mjs` prompts for the narration settings and writes a managed
 `tts-chat-answer` override into a profile's `cordis.patch.yml`. The voice
 prompt is a numbered selector; pick a listed voice or choose the custom row
-to type any Edge voice id:
+to type any Edge voice id. The playback prompt offers `inline` (in-page audio)
+or `native` (system app with in-page fallback):
 
 ```bash
 node setup.mjs                 # prompt, profile defaults to web
@@ -161,6 +178,9 @@ Host.
 - `ffmpeg` when an answer is split into more than one chunk. Without it the
   plugin falls back to a single request.
 - `espeak-ng` + `ffmpeg` for the fully local engine.
+- `native` playback on Linux needs `busctl` and an MPRIS-capable audio player
+  (GNOME Decibels, VLC, etc.). Without MPRIS the client falls back to the
+  in-page player.
 
 ## Configuration
 
@@ -170,6 +190,7 @@ Host.
 | `outputDir` | `~/.local/share/minke/tts` | Root for audio, transcripts, metadata, index. |
 | `groupByWorkspace` | `true` | Put each workspace in `<basename>-<cwd-hash>/`; `false` writes `<date>/` directly. |
 | `engine` | `edge` | `edge` (neural, online) or `espeak` (robotic, local). |
+| `playMode` | `inline` | `inline` (in-page audio, default) or `native` (system app with MPRIS control and in-page fallback). |
 | `voice` | `en-US-AriaNeural` | Edge voice; setup offers a numbered menu. |
 | `fallbackVoice` | `en-US-GuyNeural` | Retry voice when Edge returns no audio for the primary voice. |
 | `rate` / `volume` / `pitch` | `+10%` / `+0%` / `+0Hz` | Edge prosody. |

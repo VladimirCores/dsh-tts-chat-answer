@@ -9,6 +9,7 @@
         outputDir: '~/.local/share/minke/tts'
         groupByWorkspace: true
         engine: 'edge'
+        playMode: 'inline'
         voice: 'en-US-AriaNeural'
         fallbackVoice: 'en-US-GuyNeural'
         rate: '+10%'
