@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
+import { createServer } from "node:http";
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { apply, __test } from "../lib/index.js";
@@ -86,6 +87,122 @@ test("workspace folders are name plus a short path hash", () => {
   assert.deepEqual(a.dirParts, [a.key]);
   assert.equal(__test.workspaceInfo("/home/me/Projects/HPDC", false).dirParts.length, 0);
   assert.equal(__test.workspaceInfo(undefined, true).key, "unknown");
+});
+
+test("parseByteRange accepts closed, open, and suffix ranges", () => {
+  assert.deepEqual(__test.parseByteRange("bytes=0-99", 1000), { start: 0, end: 99 });
+  assert.deepEqual(__test.parseByteRange("bytes=500-", 1000), { start: 500, end: 999 });
+  assert.deepEqual(__test.parseByteRange("bytes=-100", 1000), { start: 900, end: 999 });
+  assert.equal(__test.parseByteRange("bytes=1000-", 1000), null);
+  assert.equal(__test.parseByteRange("bytes=9-3", 1000), null);
+  assert.equal(__test.parseByteRange("bytes=0-1,4-5", 1000), null);
+  assert.equal(__test.parseByteRange(undefined, 1000), null);
+});
+
+test("findAudio resolves the newest matching turn inside the output root", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "dsh-tts-audio-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const audio = join(root, "HPDC-12345678", "2026-11-19", "answer.mp3");
+  await mkdir(join(root, "HPDC-12345678", "2026-11-19"), { recursive: true });
+  await writeFile(audio, "fake mp3 bytes");
+  await writeFile(join(root, "index.jsonl"), `${[
+    JSON.stringify({ status: "error", sessionId: "s1", turn: 1, audio: "/missing.mp3" }),
+    JSON.stringify({ status: "done", sessionId: "s1", turn: 1, audio }),
+    JSON.stringify({ status: "done", sessionId: "s2", turn: 1, audio }),
+  ].join("\n")}\n`);
+
+  const found = await __test.findAudio(root, "s1", 1);
+  assert.equal(found.path, audio);
+  assert.equal(found.size, (await stat(audio)).size);
+  assert.equal(await __test.findAudio(root, "s1", 2), undefined);
+
+  await writeFile(join(root, "index.jsonl"), `${JSON.stringify({
+    status: "done",
+    sessionId: "s1",
+    turn: 1,
+    audio: "/etc/passwd",
+  })}\n`);
+  assert.equal(await __test.findAudio(root, "s1", 1), undefined);
+});
+
+test("host route serves, ranges, authenticates, and reports missing audio", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "dsh-tts-route-"));
+  const audio = join(root, "workspace", "2026-11-19", "answer.mp3");
+  await mkdir(join(root, "workspace", "2026-11-19"), { recursive: true });
+  const bytes = "fake mp3 bytes";
+  await writeFile(audio, bytes);
+  await writeFile(join(root, "index.jsonl"), `${JSON.stringify({
+    status: "done",
+    sessionId: "session-1",
+    turn: 1,
+    audio,
+  })}\n`);
+
+  let route;
+  const webCtx = {
+    effect(factory) {
+      factory();
+      return () => {};
+    },
+    webServer: {
+      register(candidate) {
+        route = candidate;
+        return () => {};
+      },
+    },
+    connection: {
+      requestRejection() {
+        return undefined;
+      },
+    },
+  };
+  const ctx = {
+    on() {
+      return () => {};
+    },
+    effect(factory) {
+      factory();
+      return () => {};
+    },
+    inject(_deps, callback) {
+      callback(webCtx);
+      return () => {};
+    },
+    logger: { info() {}, warn() {}, error() {} },
+  };
+
+  apply(ctx, { outputDir: root });
+  assert.equal(route.path, "/dsh-tts-archive/audio");
+
+  const server = createServer((req, res) => {
+    void route.handler(req, res);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+    await rm(root, { recursive: true, force: true });
+  });
+  const origin = `http://127.0.0.1:${String(server.address().port)}`;
+  const target = `${origin}/dsh-tts-archive/audio?session=session-1&turn=1`;
+
+  const full = await fetch(target);
+  assert.equal(full.status, 200);
+  assert.equal(full.headers.get("content-type"), "audio/mpeg");
+  assert.equal(Buffer.from(await full.arrayBuffer()).toString(), bytes);
+
+  const head = await fetch(target, { method: "HEAD" });
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get("content-length"), String(bytes.length));
+
+  const ranged = await fetch(target, { headers: { range: "bytes=0-3" } });
+  assert.equal(ranged.status, 206);
+  assert.equal(ranged.headers.get("content-range"), `bytes 0-3/${bytes.length}`);
+  assert.equal(Buffer.from(await ranged.arrayBuffer()).toString(), "fake");
+
+  assert.equal((await fetch(`${origin}/dsh-tts-archive/audio?session=session-1&turn=2`)).status, 404);
+
+  webCtx.connection.requestRejection = () => 401;
+  assert.equal((await fetch(target)).status, 401);
 });
 
 function mockCtx() {
@@ -274,4 +391,51 @@ test("subagent turns are skipped unless explicitly enabled", async () => {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("client bundle registers the turn-tail Play/Stop control", async () => {
+  const reactMock = {
+    createElement() {},
+    useCallback: (callback) => callback,
+    useState: () => [null, () => {}],
+    useSyncExternalStore: () => false,
+  };
+  const previousWindow = globalThis.window;
+  let exported;
+  try {
+    globalThis.window = {
+      __ModuleLoader__: {
+        load(registration) {
+          exported = registration.factory((specifier) => {
+            if (specifier === "react") return reactMock;
+            throw new Error(`unexpected client module: ${specifier}`);
+          });
+        },
+      },
+    };
+    await import("../lib/client.js");
+  } finally {
+    globalThis.window = previousWindow;
+  }
+
+  assert.ok(exported, "client bundle did not register a module");
+  assert.deepEqual(exported.inject, ["slots"]);
+
+  const registrations = [];
+  exported.apply({
+    slots: {
+      inject(name, callback) {
+        registrations.push({ name, registration: callback() });
+      },
+      register(options, component) {
+        return { options, component };
+      },
+    },
+  });
+
+  assert.equal(registrations.length, 1);
+  assert.equal(registrations[0].name, "conversation.chat.turnTail");
+  assert.equal(registrations[0].registration.options.id, "tts-archive");
+  assert.equal(registrations[0].registration.options.name, "conversation.chat.turnTail");
+  assert.equal(typeof registrations[0].registration.component, "function");
 });
