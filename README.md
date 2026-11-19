@@ -1,7 +1,12 @@
 # TTS Chat Answer
 
 `dsh-tts-chat-answer` narrates every completed assistant answer from DeepSeek
-Harness and saves the audio locally. Each turn becomes:
+Harness and saves the audio locally for later playback and play from web UI.
+
+## Storage
+
+The plugin stores audio files in `~/.local/share/dsh-tts-chat-answer/`, grouped
+by workspace and date. Each turn becomes:
 
 ```
 ~/.local/share/dsh-tts-chat-answer/
