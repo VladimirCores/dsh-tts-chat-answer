@@ -69,7 +69,7 @@ the audio files are not public static directories. Set `openCommand` if the
 platform opener is not on `PATH` or needs a custom command.
 
 This package has a Web client half (`lib/client.js`, declared under
-`dsh.client`). Restart Minke/DSH after installing or updating it so the client
+`dsh.client`). Restart DSH after installing or updating it so the client
 boot manifest includes the bundle; client-plugin HMR only applies while
 `pnpm run dev:web` is running.
 

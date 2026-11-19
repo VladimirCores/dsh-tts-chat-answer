@@ -408,7 +408,7 @@ async function main() {
     stdout.write(`Output:  ${settings.outputDir}\n`);
     stdout.write(`Engine:  ${settings.engine}${settings.engine === "edge" ? ` (${settings.voice}, ${settings.rate})` : ` (${settings.espeakVoice}, ${settings.espeakRate} wpm)`}\n`);
     stdout.write(`Playback: ${settings.playMode === "native" ? "native app (with in-page fallback)" : "in-page <audio>"}\n`);
-    stdout.write("\nRestart Minke/DSH once, then check:\n");
+    stdout.write("\nRestart DSH once, then check:\n");
     stdout.write(`  cat ${join(settings.outputDir.replace(/^~(?=$|\/)/, homedir()), ".ready")}\n`);
     return 0;
   } finally {
