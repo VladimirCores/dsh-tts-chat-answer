@@ -181,19 +181,48 @@ Host.
 
 The package declares `dsh.bundle`, an `engines.dsh` range, an icon, an English
 locale, and its repository/author metadata, so it can be listed by a DSH plugin
-index. Publish the GitHub repository, tag the release (`v0.1.0`), then either
-publish to npm or feed the Git URL to the reference index generator:
-
-A ready index lives at `site/index.json`; regenerate it after a release with:
+index. A ready index lives at `site/index.json`; regenerate it after a release
+with the reference generator:
 
 ```bash
 pnpm --filter @deepseek-ai/dsh-plugin-market-generator start \
   --input plugins.txt --output site/index.json --title "TTS Chat Answer"
 ```
 
-Serve the `site/` directory over HTTPS and add its `index.json` URL under
-**Plugins → Discover**. See the
+`plugins.txt` holds one line per source: the Git URL gives a commit-pinned
+entry, while `dsh-tts-chat-answer` gives an npm entry after the package is
+published. Serve the `site/` directory over HTTPS and add its `index.json` URL
+under **Plugins → Discover**. See the
 [plugin index guide](https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market).
+
+## Publish a release
+
+The bundle ships plain JavaScript, so the tarball needs no build step and a Git
+install works from the committed `lib/` tree. Check the package first:
+
+```bash
+npm test                # 15 tests
+npm run pack:check      # inspect the exact tarball contents
+npm publish --dry-run   # validates metadata; uploads nothing
+```
+
+`files` must keep every runtime module, the patch, the locale, the icon, and
+`setup.mjs`. A file added to `lib/` but missing from `files` loads from the
+checkout and fails after `dsh plugin add`. The setup command is declared in
+`bin` without a `./` prefix because npm rejects and silently drops a prefixed
+path at publish time.
+
+Then publish and tag:
+
+```bash
+npm publish             # needs npm auth and the dsh-tts-chat-answer name
+git push origin main --tags
+```
+
+After the registry accepts the version, switch the market entry from the
+commit-pinned Git source to npm: set the version's `source` to
+`{"type": "npm"}` and `publishTimestamp` to the registry time, or replace the
+Git URL in `plugins.txt` with `dsh-tts-chat-answer` and regenerate the index.
 
 ## Requirements
 
