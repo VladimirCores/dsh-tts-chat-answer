@@ -2,7 +2,7 @@
   "name": "@local/dsh-tts-archive",
   "version": "0.1.0",
   "private": true,
-  "description": "Narrate completed assistant answers with Edge TTS, save the audio locally, and offer in-chat Play/Stop controls.",
+  "description": "Narrate completed assistant answers with Edge TTS, save the audio locally, and offer a readiness-aware Play control in the chat.",
   "type": "module",
   "main": "lib/index.js",
   "bin": {
