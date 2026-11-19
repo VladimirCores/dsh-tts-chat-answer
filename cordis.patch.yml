@@ -1,8 +1,8 @@
 # Profile bundle layer: insert this plugin into whatever profile selects the bundle.
 # Selecting the bundle is the opt-in act; the row is active once selected.
 - insert:
-    - id: tts-archive
-      name: '@local/dsh-tts-archive'
+    - id: tts-chat-answer
+      name: '@local/dsh-tts-chat-answer'
       disabled: false
       config:
         enabled: true

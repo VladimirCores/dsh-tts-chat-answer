@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Interactive setup for the dsh-tts-archive profile bundle.
+ * Interactive setup for the dsh-tts-chat-answer profile bundle.
  *
- * It does not install the package; it writes a managed `tts-archive` config
+ * It does not install the package; it writes a managed `tts-chat-answer` config
  * row into a DSH profile's `cordis.patch.yml`. The row overrides the bundle
  * defaults, so the settings survive plugin updates.
  *
@@ -19,10 +19,28 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PLUGIN = "@local/dsh-tts-archive";
+const PLUGIN = "@local/dsh-tts-chat-answer";
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const MARK_START = "# >>> dsh-tts-archive setup >>>";
-const MARK_END = "# <<< dsh-tts-archive setup <<<";
+const MARK_START = "# >>> dsh-tts-chat-answer setup >>>";
+const MARK_END = "# <<< dsh-tts-chat-answer setup <<<";
+const LEGACY_MARK_START = "# >>> dsh-tts-archive setup >>>";
+const LEGACY_MARK_END = "# <<< dsh-tts-archive setup <<<";
+
+const CUSTOM_VOICE = "__custom__";
+const EDGE_VOICES = Object.freeze([
+  { value: "en-US-AriaNeural", label: "en-US-AriaNeural     US English, female, warm" },
+  { value: "en-US-JennyNeural", label: "en-US-JennyNeural    US English, female, friendly" },
+  { value: "en-US-GuyNeural", label: "en-US-GuyNeural      US English, male, calm" },
+  { value: "en-US-DavisNeural", label: "en-US-DavisNeural    US English, male, deep" },
+  { value: "en-GB-SoniaNeural", label: "en-GB-SoniaNeural    British English, female" },
+  { value: "en-GB-RyanNeural", label: "en-GB-RyanNeural     British English, male" },
+  { value: "en-AU-NatashaNeural", label: "en-AU-NatashaNeural  Australian English, female" },
+  { value: "en-CA-ClaraNeural", label: "en-CA-ClaraNeural    Canadian English, female" },
+  { value: "en-IN-NeerjaNeural", label: "en-IN-NeerjaNeural   Indian English, female" },
+  { value: "de-DE-KatjaNeural", label: "de-DE-KatjaNeural    German, female" },
+  { value: "fr-FR-DeniseNeural", label: "fr-FR-DeniseNeural   French, female" },
+  { value: "es-ES-ElviraNeural", label: "es-ES-ElviraNeural   Spanish, female" },
+]);
 
 const DEFAULTS = Object.freeze({
   enabled: true,
@@ -50,6 +68,11 @@ const DEFAULTS = Object.freeze({
   ffmpegCommand: "ffmpeg",
   edgeTtsCommand: "edge-tts",
 });
+
+/** Pick a different, known-good voice for the no-audio retry. */
+function recommendedFallback(voice) {
+  return voice === "en-US-GuyNeural" ? "en-US-AriaNeural" : "en-US-GuyNeural";
+}
 
 function usage() {
   stdout.write(`Usage: node setup.mjs [options]
@@ -138,6 +161,35 @@ class Prompter {
     }
   }
 
+  async select(question, options, fallback) {
+    const defaultIndex = Math.max(0, options.findIndex((option) => option.value === fallback));
+    if (this.yes) return options[defaultIndex]?.value ?? fallback;
+    stdout.write(`\n${question}:\n`);
+    options.forEach((option, index) => {
+      stdout.write(`  ${String(index + 1).padStart(2, " ")}. ${option.label}\n`);
+    });
+    while (true) {
+      const answer = (await this.rl.question(`Choose 1-${options.length} [${defaultIndex + 1}]: `)).trim();
+      if (answer.length === 0) return options[defaultIndex].value;
+      const index = Number(answer);
+      if (Number.isInteger(index) && index >= 1 && index <= options.length) {
+        return options[index - 1].value;
+      }
+      stdout.write(`  ! enter a number between 1 and ${options.length}\n`);
+    }
+  }
+
+  async voice(question, fallback) {
+    const options = [
+      ...EDGE_VOICES,
+      { value: CUSTOM_VOICE, label: "Custom Edge voice id (type it next)" },
+    ];
+    const selected = await this.select(question, options, fallback);
+    if (selected !== CUSTOM_VOICE) return selected;
+    return this.text("Edge voice id", fallback, (value) =>
+      value.length > 0 ? undefined : "voice cannot be empty");
+  }
+
   async integer(question, fallback, min, max) {
     return Number(await this.text(question, String(fallback), (value) => {
       const number = Number(value);
@@ -221,7 +273,7 @@ async function main() {
     }
 
     stdout.write("\nInteractive settings (press Enter for the default).\n");
-    const enabled = await prompt.bool("Enable the TTS archive?", DEFAULTS.enabled);
+    const enabled = await prompt.bool("Enable chat-answer narration?", DEFAULTS.enabled);
     const outputDir = await prompt.text(
       "Output directory",
       DEFAULTS.outputDir,
@@ -234,6 +286,7 @@ async function main() {
     const engine = await prompt.choice("TTS engine", ["edge", "espeak"], DEFAULTS.engine);
 
     let voice = DEFAULTS.voice;
+    let fallbackVoice = DEFAULTS.fallbackVoice;
     let rate = DEFAULTS.rate;
     let volume = DEFAULTS.volume;
     let pitch = DEFAULTS.pitch;
@@ -241,11 +294,8 @@ async function main() {
     let espeakRate = DEFAULTS.espeakRate;
 
     if (engine === "edge") {
-      voice = await prompt.text(
-        "Edge voice",
-        DEFAULTS.voice,
-        (value) => value.length > 0 ? undefined : "voice cannot be empty",
-      );
+      voice = await prompt.voice("Edge voice", DEFAULTS.voice);
+      fallbackVoice = recommendedFallback(voice);
       rate = normalizeSigned(await prompt.text("Speech rate", DEFAULTS.rate, (value) => signedPercent(value, "rate")));
     } else {
       espeakVoice = await prompt.text(
@@ -277,6 +327,14 @@ async function main() {
 
     if (advanced) {
       if (engine === "edge") {
+        fallbackVoice = await prompt.voice(
+          "Fallback Edge voice (used only if the primary returns no audio)",
+          fallbackVoice,
+        );
+        if (fallbackVoice === voice) {
+          fallbackVoice = recommendedFallback(voice);
+          stdout.write(`  ! fallback must differ from the primary voice; using ${fallbackVoice}\n`);
+        }
         volume = normalizeSigned(await prompt.text("Volume", DEFAULTS.volume, (value) => signedPercent(value, "volume")));
         pitch = normalizeSigned(await prompt.text("Pitch", DEFAULTS.pitch, (value) => signedHz(value)));
       }
@@ -302,7 +360,7 @@ async function main() {
       groupByWorkspace,
       engine,
       voice,
-      fallbackVoice: DEFAULTS.fallbackVoice,
+      fallbackVoice,
       rate,
       volume,
       pitch,
@@ -353,7 +411,7 @@ async function main() {
 function renderBlock(settings) {
   const lines = [
     MARK_START,
-    "- id: tts-archive",
+    "- id: tts-chat-answer",
     `  name: '${PLUGIN}'`,
     "  config:",
     `    enabled: ${settings.enabled}`,
@@ -390,6 +448,7 @@ function yamlString(value) {
 }
 
 function replaceManagedBlock(text, block) {
+  text = removeManagedBlock(text, LEGACY_MARK_START, LEGACY_MARK_END);
   const start = text.indexOf(MARK_START);
   const end = text.indexOf(MARK_END);
   if (start !== -1 && end > start) {
@@ -397,6 +456,17 @@ function replaceManagedBlock(text, block) {
   }
   const trimmed = text.trimEnd();
   return `${trimmed.length > 0 ? `${trimmed}\n\n` : ""}${block}`;
+}
+
+function removeManagedBlock(text, startMarker, endMarker) {
+  const start = text.indexOf(startMarker);
+  const end = text.indexOf(endMarker);
+  if (start === -1 || end <= start) return text;
+  const before = text.slice(0, start).trimEnd();
+  const after = text.slice(end + endMarker.length).trimStart();
+  if (before.length === 0) return after;
+  if (after.length === 0) return `${before}\n`;
+  return `${before}\n\n${after}`;
 }
 
 async function readText(path, fallback) {

@@ -1,12 +1,12 @@
 {
-  "name": "@local/dsh-tts-archive",
+  "name": "@local/dsh-tts-chat-answer",
   "version": "0.1.0",
   "private": true,
   "description": "Narrate completed assistant answers with Edge TTS, save the audio locally, and offer a readiness-aware Play control in the chat.",
   "type": "module",
   "main": "lib/index.js",
   "bin": {
-    "dsh-tts-archive-setup": "./setup.mjs"
+    "dsh-tts-chat-answer-setup": "./setup.mjs"
   },
   "scripts": {
     "setup": "node setup.mjs",

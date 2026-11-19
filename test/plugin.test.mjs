@@ -173,9 +173,9 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
 
   apply(ctx, { outputDir: root, openCommand: "/bin/true" });
   assert.deepEqual([...routes.keys()].sort(), [
-    "/dsh-tts-archive/audio",
-    "/dsh-tts-archive/open",
-    "/dsh-tts-archive/status",
+    "/dsh-tts-chat-answer/audio",
+    "/dsh-tts-chat-answer/open",
+    "/dsh-tts-chat-answer/status",
   ]);
 
   const server = createServer((req, res) => {
@@ -194,7 +194,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     await rm(root, { recursive: true, force: true });
   });
   const origin = `http://127.0.0.1:${String(server.address().port)}`;
-  const target = `${origin}/dsh-tts-archive/audio?session=session-1&turn=1`;
+  const target = `${origin}/dsh-tts-chat-answer/audio?session=session-1&turn=1`;
 
   const full = await fetch(target);
   assert.equal(full.status, 200);
@@ -210,14 +210,14 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   assert.equal(ranged.headers.get("content-range"), `bytes 0-3/${bytes.length}`);
   assert.equal(Buffer.from(await ranged.arrayBuffer()).toString(), "fake");
 
-  assert.equal((await fetch(`${origin}/dsh-tts-archive/audio?session=session-1&turn=2`)).status, 404);
+  assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/audio?session=session-1&turn=2`)).status, 404);
 
-  const status = await fetch(`${origin}/dsh-tts-archive/status?session=session-1&turn=1`).then((response) => response.json());
+  const status = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=1`).then((response) => response.json());
   assert.deepEqual(status, { state: "ready", bytes: bytes.length });
-  const missing = await fetch(`${origin}/dsh-tts-archive/status?session=session-1&turn=2`).then((response) => response.json());
+  const missing = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=2`).then((response) => response.json());
   assert.equal(missing.state, "missing");
 
-  const opened = await fetch(`${origin}/dsh-tts-archive/open`, {
+  const opened = await fetch(`${origin}/dsh-tts-chat-answer/open`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ session: "session-1", turn: 1 }),
@@ -227,8 +227,8 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
 
   webCtx.connection.requestRejection = () => 401;
   assert.equal((await fetch(target)).status, 401);
-  assert.equal((await fetch(`${origin}/dsh-tts-archive/status?session=session-1&turn=1`)).status, 401);
-  assert.equal((await fetch(`${origin}/dsh-tts-archive/open`, {
+  assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=1`)).status, 401);
+  assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/open`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ session: "session-1", turn: 1 }),
@@ -465,7 +465,7 @@ test("client bundle registers the turn-tail Play control", async () => {
 
   assert.equal(registrations.length, 1);
   assert.equal(registrations[0].name, "conversation.chat.turnTail");
-  assert.equal(registrations[0].registration.options.id, "tts-archive");
+  assert.equal(registrations[0].registration.options.id, "tts-chat-answer");
   assert.equal(registrations[0].registration.options.name, "conversation.chat.turnTail");
   assert.equal(typeof registrations[0].registration.component, "function");
 });
