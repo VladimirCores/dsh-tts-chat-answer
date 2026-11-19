@@ -1,2 +1,2 @@
 # TTS Chat Answer plugin index source
-https://github.com/VladimirCores/dsh-tts-chat-answer
+dsh-tts-chat-answer
