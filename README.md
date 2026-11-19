@@ -93,7 +93,7 @@ Alternatively, insert it directly in `~/.dsh/profiles/web/cordis.patch.yml`:
         enabled: true
         outputDir: '~/.local/share/minke/tts'
         engine: 'edge'
-        voice: 'en-US-AndrewNeural'
+        voice: 'en-US-AriaNeural'
         rate: '+10%'
 ```
 
@@ -144,7 +144,8 @@ Host.
 | `outputDir` | `~/.local/share/minke/tts` | Root for audio, transcripts, metadata, index. |
 | `groupByWorkspace` | `true` | Put each workspace in `<basename>-<cwd-hash>/`; `false` writes `<date>/` directly. |
 | `engine` | `edge` | `edge` (neural, online) or `espeak` (robotic, local). |
-| `voice` | `en-US-AndrewNeural` | Edge voice. |
+| `voice` | `en-US-AriaNeural` | Edge voice. |
+| `fallbackVoice` | `en-US-GuyNeural` | Retry voice when Edge returns no audio for the primary voice. |
 | `rate` / `volume` / `pitch` | `+10%` / `+0%` / `+0Hz` | Edge prosody. |
 | `minChars` | `40` | Skip turns with almost no speakable text. |
 | `maxChars` | `12000` | Truncate longer answers at a sentence boundary. |
