@@ -5,6 +5,13 @@
   "description": "Narrate every completed assistant answer with Edge TTS and save the audio locally.",
   "type": "module",
   "main": "lib/index.js",
+  "bin": {
+    "dsh-tts-archive-setup": "./setup.mjs"
+  },
+  "scripts": {
+    "setup": "node setup.mjs",
+    "test": "node test/plugin.test.mjs"
+  },
   "exports": {
     ".": "./lib/index.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
@@ -13,7 +20,8 @@
   "files": [
     "lib/index.js",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "setup.mjs"
   ],
   "dsh": {
     "bundle": {
