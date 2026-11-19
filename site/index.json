@@ -9,7 +9,7 @@
       "name": "dsh-tts-chat-answer",
       "title": "TTS Chat Answer",
       "description": "Narrate completed assistant answers, save the audio locally, and play it in-page or in a native MPRIS player.",
-      "icon": "icons/dsh-tts-chat-answer.svg",
+      "icon": "icons/dsh-tts-chat-answer.png",
       "author": "Vladimir Cores",
       "homepage": "https://github.com/VladimirCores/dsh-tts-chat-answer",
       "repository": {
