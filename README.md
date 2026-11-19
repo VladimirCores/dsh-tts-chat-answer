@@ -3,6 +3,28 @@
 `dsh-tts-chat-answer` narrates every completed assistant answer from DeepSeek
 Harness and saves the audio locally for later playback and play from web UI.
 
+## Setup
+
+Install the bundle into a profile and run the interactive setup:
+
+```bash
+dsh plugin --profile web add dsh-tts-chat-answer
+npx -p dsh-tts-chat-answer dsh-tts-chat-answer-setup
+```
+
+From a checkout, run `node setup.mjs` instead. The prompt asks for the profile,
+the voice, and the playback mode, then writes a managed `tts-chat-answer`
+override into that profile's `cordis.patch.yml`. Restart the Host afterwards;
+`~/.local/share/dsh-tts-chat-answer/.ready` appears once the plugin mounts.
+
+The voice menu is a numbered selector: pick a preset or the custom row and type
+any Edge voice id. The playback menu offers `inline` (in-page audio) or `native`
+(system player with in-page fallback). Options: `--profile web` skips the
+profile question, `--yes` accepts the defaults, and `--dry-run` prints the
+generated YAML without writing. Re-running updates the block delimited by
+`# >>> dsh-tts-chat-answer setup >>>` in place and saves a timestamped copy of
+the previous patch file.
+
 ## Storage
 
 The plugin stores audio files in `~/.local/share/dsh-tts-chat-answer/`, grouped
@@ -155,28 +177,6 @@ cat ~/.local/share/dsh-tts-chat-answer/.ready
 Remove the bundle from `dsh.profile.bundles` (or set `enabled: false`) to
 disable it.
 
-## Interactive setup
-
-`setup.mjs` prompts for the narration settings and writes a managed
-`tts-chat-answer` override into a profile's `cordis.patch.yml`. The voice
-prompt is a numbered selector; pick a listed voice or choose the custom row
-to type any Edge voice id. The playback prompt offers `inline` (in-page audio)
-or `native` (system app with in-page fallback):
-
-```bash
-node setup.mjs                 # prompt, profile defaults to web
-node setup.mjs --profile web   # skip the profile prompt
-node setup.mjs --profile web --yes
-node setup.mjs --dry-run       # print the generated YAML, write nothing
-```
-
-The block is delimited by `# >>> dsh-tts-chat-answer setup >>>` /
-`# <<< dsh-tts-chat-answer setup <<<`, so re-running the script updates it in
-place instead of appending duplicates. A timestamped backup of the previous
-patch file is created before each write. The script does not install the
-package; install it first with `dsh plugin add`, then run setup and restart the
-Host.
-
 ## Plugin market
 
 The package declares `dsh.bundle`, an `engines.dsh` range, an icon, an English
@@ -215,14 +215,15 @@ path at publish time.
 Then publish and tag:
 
 ```bash
-npm publish             # needs npm auth and the dsh-tts-chat-answer name
-git push origin main --tags
+npm version patch        # bumps package.json, commits, tags vX.Y.Z
+npm publish
+git push --follow-tags
 ```
 
-After the registry accepts the version, switch the market entry from the
-commit-pinned Git source to npm: set the version's `source` to
-`{"type": "npm"}` and `publishTimestamp` to the registry time, or replace the
-Git URL in `plugins.txt` with `dsh-tts-chat-answer` and regenerate the index.
+After the registry accepts the version, update `site/index.json`: set
+`version`, set `publishTimestamp` to the registry time (`npm view
+dsh-tts-chat-answer time --json`), and keep `source` as `{"type": "npm"}`. The
+Pages workflow republishes `site/` on the next push.
 
 ## Requirements
 
