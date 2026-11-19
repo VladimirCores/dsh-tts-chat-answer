@@ -25,7 +25,7 @@
   "type": "module",
   "main": "lib/index.js",
   "bin": {
-    "dsh-tts-chat-answer-setup": "./setup.mjs"
+    "dsh-tts-chat-answer-setup": "setup.mjs"
   },
   "scripts": {
     "setup": "node setup.mjs",
