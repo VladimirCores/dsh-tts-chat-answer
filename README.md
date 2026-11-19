@@ -183,7 +183,7 @@ A ready index lives at `site/index.json`; regenerate it after a release with:
 
 ```bash
 pnpm --filter @deepseek-ai/dsh-plugin-market-generator start \
-  --input plugins.txt --output site/index.json --title "Chat Answer TTS"
+  --input plugins.txt --output site/index.json --title "TTS Chat Answer"
 ```
 
 Serve the `site/` directory over HTTPS and add its `index.json` URL under

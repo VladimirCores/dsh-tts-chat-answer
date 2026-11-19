@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "title": { "en": "Chat Answer TTS" },
+  "title": { "en": "TTS Chat Answer" },
   "description": "Narrate completed Harness answers and play the saved audio in-page or in a native MPRIS player.",
   "plugins": [
     {
       "name": "dsh-tts-chat-answer",
-      "title": "Chat Answer TTS",
+      "title": "TTS Chat Answer",
       "description": "Narrate completed assistant answers, save the audio locally, and play it in-page or in a native MPRIS player.",
       "icon": "icons/dsh-tts-chat-answer.svg",
       "author": "Vladimir Cores",
