@@ -22,7 +22,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/VladimirCores/dsh-tts-chat-answer",
-            "commit": "e222f5e9c9103fa3df952a3df573942d59916439"
+            "commit": "cf09ec0a493968a45dadfff50f58baaa6cf3601d"
           },
           "engines": {
             "dsh": ">=0.2.1-rc.2 <0.3.0"
