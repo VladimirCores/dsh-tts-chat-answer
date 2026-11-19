@@ -2,7 +2,7 @@
   "name": "@local/dsh-tts-archive",
   "version": "0.1.0",
   "private": true,
-  "description": "Narrate every completed assistant answer with Edge TTS and save the audio locally.",
+  "description": "Narrate completed assistant answers with Edge TTS, save the audio locally, and offer in-chat Play/Stop controls.",
   "type": "module",
   "main": "lib/index.js",
   "bin": {
@@ -14,11 +14,13 @@
   },
   "exports": {
     ".": "./lib/index.js",
+    "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
+    "lib/client.js",
     "cordis.patch.yml",
     "README.md",
     "setup.mjs"
@@ -26,6 +28,14 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-chat",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
     }
   },
   "license": "MIT"
