@@ -75,6 +75,25 @@ cat ~/.local/share/minke/tts/.ready
 Remove the bundle from `dsh.profile.bundles` (or set `enabled: false`) to
 disable it.
 
+## Interactive setup
+
+`setup.mjs` prompts for the narration settings and writes a managed
+`tts-archive` override into a profile's `cordis.patch.yml`:
+
+```bash
+node setup.mjs                 # prompt, profile defaults to web
+node setup.mjs --profile web   # skip the profile prompt
+node setup.mjs --profile web --yes
+node setup.mjs --dry-run       # print the generated YAML, write nothing
+```
+
+The block is delimited by `# >>> dsh-tts-archive setup >>>` /
+`# <<< dsh-tts-archive setup <<<`, so re-running the script updates it in
+place instead of appending duplicates. A timestamped backup of the previous
+patch file is created before each write. The script does not install the
+package; install it first with `dsh plugin add`, then run setup and restart the
+Host.
+
 ## Requirements
 
 - `edge-tts` for the default engine. It is installed at
