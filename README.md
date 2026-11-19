@@ -3,12 +3,51 @@
 `dsh-tts-chat-answer` narrates every completed assistant answer from DeepSeek
 Harness and saves the audio locally for later playback and play from web UI.
 
-## Setup
+## Install
 
-Install the bundle into a profile and run the interactive setup:
+The package is a profile **bundle**: installing it also selects it as a layer.
+Pick one source.
+
+From the plugin market, add the index source under **Plugins → Discover → Add
+index source**:
+
+```text
+https://vladimircores.github.io/dsh-tts-chat-answer/index.json
+```
+
+From npm, which serves the same tarball the market installs:
 
 ```bash
 dsh plugin --profile web add dsh-tts-chat-answer
+```
+
+From GitHub, which needs no build step because the JavaScript is committed:
+
+```bash
+dsh plugin --profile web add github:VladimirCores/dsh-tts-chat-answer
+```
+
+From a checkout, install the plugin's own dependencies and link it:
+
+```bash
+cd /absolute/path/to/dsh-tts-chat-answer
+npm install
+dsh plugin --profile web add .
+```
+
+`dsh plugin add` installs the dependency and selects the bundle in
+`~/.dsh/profiles/web/package.json`. If a package ends up installed but not
+selected, add `dsh-tts-chat-answer` to `dsh.profile.bundles`. A running profile
+does not always hot-add a new row, so restart the Host; afterwards
+`~/.local/share/dsh-tts-chat-answer/.ready` proves the plugin mounted. Disable
+it with `dsh plugin --profile web remove dsh-tts-chat-answer`, or set
+`enabled: false` in the profile patch.
+
+## Setup
+
+After installing, run the interactive setup:
+
+```bash
 npx -p dsh-tts-chat-answer dsh-tts-chat-answer-setup
 ```
 
@@ -124,59 +163,6 @@ Choose the last menu row to enter any other Edge voice id. The setup derives
 section lets you override it. The fallback is only used when Edge returns no
 audio for the primary voice.
 
-## Install into a profile
-
-The package is a profile **bundle**. Install it from the checkout:
-
-```bash
-cd /absolute/path/to/plugins/dsh-tts-chat-answer
-npm install
-dsh plugin --profile web add .
-```
-
-`dsh plugin add` installs the dependency and normally selects the bundle in
-`~/.dsh/profiles/web/package.json`. If it is installed but not selected, add it
-to `dsh.profile.bundles`:
-
-```json
-{
-  "dsh": {
-    "profile": {
-      "bundles": [
-        "@deepseek-ai/dsh-base",
-        "dsh-tts-chat-answer"
-      ]
-    }
-  }
-}
-```
-
-Alternatively, insert it directly in `~/.dsh/profiles/web/cordis.patch.yml`:
-
-```yaml
-- insert:
-    - id: tts-chat-answer
-      name: 'dsh-tts-chat-answer'
-      config:
-        enabled: true
-        outputDir: '~/.local/share/dsh-tts-chat-answer'
-        engine: 'edge'
-        playMode: 'inline'
-        voice: 'en-US-AriaNeural'
-        rate: '+10%'
-```
-
-Restart the DSH Host once after the first installation. A running profile does
-not always hot-add a new module row; restarting is deterministic. After restart,
-this file proves the plugin mounted:
-
-```bash
-cat ~/.local/share/dsh-tts-chat-answer/.ready
-```
-
-Remove the bundle from `dsh.profile.bundles` (or set `enabled: false`) to
-disable it.
-
 ## Plugin market
 
 The package is published on npm as `dsh-tts-chat-answer` and declares
@@ -184,9 +170,7 @@ The package is published on npm as `dsh-tts-chat-answer` and declares
 repository/author metadata, so a DSH plugin index can list it.
 
 `site/index.json` is deployed by `.github/workflows/pages.yml` and served at
-<https://vladimircores.github.io/dsh-tts-chat-answer/>. Add
-`https://vladimircores.github.io/dsh-tts-chat-answer/index.json` under
-**Plugins → Discover → Add index source**.
+<https://vladimircores.github.io/dsh-tts-chat-answer/>.
 
 Regenerate the entry with the reference generator after a release:
 
