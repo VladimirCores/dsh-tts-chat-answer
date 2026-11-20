@@ -207,11 +207,14 @@ The interactive setup shows a numbered voice menu. The built-in choices are:
 | `de-DE-KatjaNeural` | German, female |
 | `fr-FR-DeniseNeural` | French, female |
 | `es-ES-ElviraNeural` | Spanish, female |
+| `ru-RU-SvetlanaNeural` | Russian, female |
+| `ru-RU-DmitryNeural` | Russian, male |
 
 Choose the last menu row to enter any other Edge voice id. The setup derives
-`fallbackVoice` from the primary voice (Aria and Guy swap); the advanced
-section lets you override it. The fallback is only used when Edge returns no
-audio for the primary voice.
+`fallbackVoice` from the primary voice: Aria and Guy swap, and the Russian pair
+Svetlana and Dmitry swap (any other `ru-RU-*` id falls back to Dmitry). The
+advanced section lets you override it. The fallback is only used when Edge
+returns no audio for the primary voice.
 
 ## Market index
 
@@ -290,8 +293,8 @@ to restore the setting.
 | `groupByWorkspace` | `true` | Put each workspace in `<basename>-<cwd-hash>/`; `false` writes `<date>/` directly. |
 | `engine` | `edge` | `edge` (neural, online) or `espeak` (robotic, local). |
 | `playMode` | `inline` | `inline` (in-page audio, default) or `native` (system app with MPRIS control and in-page fallback). |
-| `voice` | `en-US-AriaNeural` | Edge voice; setup offers a numbered menu. |
-| `fallbackVoice` | `en-US-GuyNeural` | Retry voice when Edge returns no audio for the primary voice. |
+| `voice` | `en-US-AriaNeural` | Edge voice; setup offers a numbered menu with Russian female `ru-RU-SvetlanaNeural` and male `ru-RU-DmitryNeural`. |
+| `fallbackVoice` | `en-US-GuyNeural` | Retry voice when Edge returns no audio for the primary voice; the setup pairs the Russian voices. |
 | `rate` / `volume` / `pitch` | `+10%` / `+0%` / `+0Hz` | Edge prosody. |
 | `minChars` | `40` | Skip turns with almost no speakable text. |
 | `maxChars` | `12000` | Truncate longer answers at a sentence boundary. |
