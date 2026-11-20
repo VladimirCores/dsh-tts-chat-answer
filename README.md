@@ -170,9 +170,11 @@ POST /dsh-tts-chat-answer/delete
 ```
 
 **Open** reveals the directory holding the MP3, transcript, and metadata in the
-system file manager. **Delete** stops playback, removes all three files for the
-turn, and marks it as having no narration, so the control falls back to
-**Generate**. Deletion is immediate — there is no confirmation prompt.
+system file manager. **Delete** asks for confirmation: the first click turns the
+button into **Confirm**, and a second click within five seconds stops playback,
+removes all three files for the turn, and marks it as having no narration, so
+the control falls back to **Generate**. Letting the confirmation time out
+cancels it.
 
 `playMode: "inline"` (the default) plays in the Web UI through one shared
 `HTMLAudioElement`. The control becomes `Pause` while playing and `Resume`
