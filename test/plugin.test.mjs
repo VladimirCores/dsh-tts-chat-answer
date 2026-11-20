@@ -825,6 +825,8 @@ test("client bundle registers the turn-tail Play control", async () => {
   const { deleteLabel } = exported.__test;
   assert.equal(deleteLabel(false, false), "Delete");
   assert.equal(deleteLabel(true, false), "Confirm");
+  assert.equal(deleteLabel(true, false, 5), "Confirm 5s");
+  assert.equal(deleteLabel(true, false, 1), "Confirm 1s");
   assert.equal(deleteLabel(false, true), "Deleting…");
   assert.equal(deleteLabel(true, true), "Deleting…");
 });
