@@ -158,6 +158,15 @@ POST /dsh-tts-chat-answer/generate
 A turn whose last attempt failed shows `Retry`. Generation uses the same queue,
 voice, and output layout as automatic narration.
 
+Once a turn has audio, a folder button at the right end of the control row opens
+the directory holding its MP3, transcript, and metadata in the system file
+manager:
+
+```text
+POST /dsh-tts-chat-answer/folder
+{"session":"<session-id>","turn":<turn>}
+```
+
 `playMode: "inline"` (the default) plays in the Web UI through one shared
 `HTMLAudioElement`. The control becomes `Pause` while playing and `Resume`
 while paused; a `Stop` button resets it. Pressing Play on another answer stops
