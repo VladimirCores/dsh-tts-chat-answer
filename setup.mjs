@@ -14,6 +14,7 @@
  */
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { realpathSync } from "node:fs";
 import { access, copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -27,7 +28,7 @@ const LEGACY_MARK_START = "# >>> dsh-tts-archive setup >>>";
 const LEGACY_MARK_END = "# <<< dsh-tts-archive setup <<<";
 
 const CUSTOM_VOICE = "__custom__";
-const EDGE_VOICES = Object.freeze([
+export const EDGE_VOICES = Object.freeze([
   { value: "en-US-AriaNeural", label: "en-US-AriaNeural     US English, female, warm" },
   { value: "en-US-JennyNeural", label: "en-US-JennyNeural    US English, female, friendly" },
   { value: "en-US-GuyNeural", label: "en-US-GuyNeural      US English, male, calm" },
@@ -40,6 +41,8 @@ const EDGE_VOICES = Object.freeze([
   { value: "de-DE-KatjaNeural", label: "de-DE-KatjaNeural    German, female" },
   { value: "fr-FR-DeniseNeural", label: "fr-FR-DeniseNeural   French, female" },
   { value: "es-ES-ElviraNeural", label: "es-ES-ElviraNeural   Spanish, female" },
+  { value: "ru-RU-SvetlanaNeural", label: "ru-RU-SvetlanaNeural Russian, female" },
+  { value: "ru-RU-DmitryNeural", label: "ru-RU-DmitryNeural   Russian, male" },
 ]);
 
 const DEFAULTS = Object.freeze({
@@ -71,7 +74,9 @@ const DEFAULTS = Object.freeze({
 });
 
 /** Pick a different, known-good voice for the no-audio retry. */
-function recommendedFallback(voice) {
+export function recommendedFallback(voice) {
+  if (voice === "ru-RU-DmitryNeural") return "ru-RU-SvetlanaNeural";
+  if (voice.startsWith("ru-RU-")) return "ru-RU-DmitryNeural";
   return voice === "en-US-GuyNeural" ? "en-US-AriaNeural" : "en-US-GuyNeural";
 }
 
@@ -507,7 +512,19 @@ async function listProfiles(dshHome) {
   }
 }
 
-main().catch((error) => {
-  stdout.write(`\nsetup failed: ${error instanceof Error ? error.message : String(error)}\n`);
-  process.exitCode = 1;
-});
+function invokedDirectly() {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (invokedDirectly()) {
+  main().catch((error) => {
+    stdout.write(`\nsetup failed: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  });
+}
