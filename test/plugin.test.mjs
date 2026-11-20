@@ -5,6 +5,7 @@ import { chmod, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from "n
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { apply, Config, name as pluginName, __test } from "../lib/index.js";
+import { EDGE_VOICES, recommendedFallback } from "../setup.mjs";
 
 const EDGE_TTS = process.env.EDGE_TTS ?? "/home/cores/.local/bin/edge-tts";
 const FFMPEG = process.env.FFMPEG ?? "/usr/bin/ffmpeg";
@@ -18,6 +19,17 @@ test("plugin name and Config schema match the published contract", () => {
   assert.throws(() => Config({ engine: "invalid" }), /engine/u);
   assert.throws(() => Config({ minChars: 0 }), /minChars/u);
   assert.throws(() => Config({ rate: "10" }), /rate/u);
+});
+
+test("setup offers Russian voices and pairs their fallbacks", () => {
+  const voices = EDGE_VOICES.map((entry) => entry.value);
+  assert.ok(voices.includes("ru-RU-SvetlanaNeural"), "expected the Russian female voice");
+  assert.ok(voices.includes("ru-RU-DmitryNeural"), "expected the Russian male voice");
+  assert.equal(recommendedFallback("ru-RU-SvetlanaNeural"), "ru-RU-DmitryNeural");
+  assert.equal(recommendedFallback("ru-RU-DmitryNeural"), "ru-RU-SvetlanaNeural");
+  assert.equal(recommendedFallback("ru-RU-DariyaNeural"), "ru-RU-DmitryNeural");
+  assert.equal(recommendedFallback("en-US-AriaNeural"), "en-US-GuyNeural");
+  assert.equal(recommendedFallback("en-US-GuyNeural"), "en-US-AriaNeural");
 });
 
 test("toSpeechText removes code, links, tables, and markdown noise", () => {
