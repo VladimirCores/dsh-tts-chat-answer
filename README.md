@@ -35,10 +35,12 @@ flow and the first generated answer:
 |:--:|---|---|
 | 1 | In **Plugins → Add plugin**, type `dsh-tts-chat-answer`, keep the npm registry, and press **Install**. | <img src="screenshots/market-1-add-plugin.png" width="440" alt="Add plugin dialog with the package name entered"> |
 | 2 | The dialog confirms **Installed** with the package version. Press **Enable now**; restart DSH if the row does not appear yet. | <img src="screenshots/market-2-installed.png" width="360" alt="Installed confirmation with an Enable now button"> |
-| 3 | A message written before the plugin existed has no audio, so its footer offers **Generate** instead of Play. | <img src="screenshots/market-3-generate.png" width="440" alt="Generate button under an older assistant answer"> |
-| 4 | The control reads **Generating…** and the hint reads `Preparing audio…` while the Host synthesizes the MP3. | <img src="screenshots/market-4-generating.png" width="360" alt="Generating state and preparing-audio hint"> |
-| 5 | When the file is saved, the control becomes **Play**. | <img src="screenshots/market-5-play.png" width="360" alt="Play button after generation finished"> |
-| 6 | During playback it shows **Pause**, **Stop**, and the elapsed position. | <img src="screenshots/market-6-playing.png" width="320" alt="Pause and Stop buttons with playback progress"> |
+| 3 | A message written before the plugin existed has no audio, so its footer offers **Generate**; Open and Delete stay disabled. | <img src="screenshots/market-3-generate.png" width="500" alt="Generate button with disabled Open and Delete at the right"> |
+| 4 | The control reads **Generating…** and the hint reads `Preparing audio…` while the Host synthesizes the MP3. | <img src="screenshots/market-4-generating.png" width="500" alt="Generating state and preparing-audio hint"> |
+| 5 | When the file is saved, the control becomes **Play** and **Open** / **Delete** activate on the right. | <img src="screenshots/market-5-play.png" width="500" alt="Play button with Open and Delete actions"> |
+| 6 | During playback it shows **Pause**, **Stop**, and the elapsed position; Open and Delete stay available. | <img src="screenshots/market-6-playing.png" width="500" alt="Pause and Stop buttons with playback progress"> |
+| 7 | **Delete** asks for confirmation: it changes to **Confirm** with a five-second countdown, then removes the audio, transcript, and metadata. | <img src="screenshots/market-7-confirm.png" width="500" alt="Confirm countdown and disabled deletion state"> |
+| 8 | After deletion the turn returns to **Generate**, ready to be narrated again. | <img src="screenshots/market-8-deleted.png" width="500" alt="Generate button restored after deletion"> |
 
 Prefer one image? [screenshots/social-card.png](screenshots/social-card.png) is the
 same walkthrough as a single 1200×1700 card for social posts.
