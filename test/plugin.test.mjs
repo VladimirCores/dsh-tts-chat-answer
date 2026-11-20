@@ -743,6 +743,20 @@ test("client bundle registers the turn-tail Play control", async () => {
   assert.equal(controlLabel({ state: "ready" }, { ...idle, active: true, playing: true }), "Pause");
   assert.equal(controlLabel({ state: "queued" }, idle), "Generating…");
   assert.equal(controlLabel({ state: "missing" }, { ...idle, generating: true }), "Generating…");
+
+  const { controlTitle } = exported.__test;
+  const idleTitle = { active: false, playing: false, generating: false, canGenerate: false };
+  assert.equal(controlTitle({ state: "loading" }, idleTitle), "Preparing narration");
+  assert.equal(controlTitle({ state: "queued" }, idleTitle), "Queued for narration");
+  assert.equal(controlTitle({ state: "processing" }, idleTitle), "Generating narration");
+  assert.equal(controlTitle({ state: "missing" }, { ...idleTitle, canGenerate: true }), "Generate narration");
+  assert.equal(controlTitle({ state: "error" }, { ...idleTitle, canGenerate: true }), "Retry narration");
+  assert.equal(
+    controlTitle({ state: "missing" }, { ...idleTitle, generating: true, canGenerate: true }),
+    "Generating narration",
+  );
+  assert.equal(controlTitle({ state: "ready" }, idleTitle), "Play narration");
+  assert.equal(controlTitle({ state: "ready" }, { ...idleTitle, active: true, playing: true }), "Pause narration");
 });
 
 test("client inline player shares one audio element and resets on stop", async () => {
