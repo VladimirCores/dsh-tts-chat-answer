@@ -214,6 +214,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   apply(ctx, { enabled: true, outputDir: root, openCommand: "/bin/true" });
   assert.deepEqual([...routes.keys()].sort(), [
     "/dsh-tts-chat-answer/audio",
+    "/dsh-tts-chat-answer/folder",
     "/dsh-tts-chat-answer/generate",
     "/dsh-tts-chat-answer/open",
     "/dsh-tts-chat-answer/playback",
@@ -281,6 +282,21 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   });
   assert.equal(generatedNoAnswer.status, 422);
 
+  const folder = await fetch(`${origin}/dsh-tts-chat-answer/folder`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  });
+  assert.equal(folder.status, 200);
+  assert.deepEqual(await folder.json(), { ok: true });
+
+  const folderMissing = await fetch(`${origin}/dsh-tts-chat-answer/folder`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 2 }),
+  });
+  assert.equal(folderMissing.status, 404);
+
   const opened = await fetch(`${origin}/dsh-tts-chat-answer/open`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -301,6 +317,11 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ session: "session-1", turn: 2 }),
+  })).status, 401);
+  assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/folder`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
   })).status, 401);
 });
 
@@ -464,6 +485,21 @@ process.exit(1);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const origin = `http://127.0.0.1:${String(server.address().port)}`;
+
+  const folder = await fetch(`${origin}/dsh-tts-chat-answer/folder`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  });
+  assert.equal(folder.status, 200);
+  assert.deepEqual(await folder.json(), { ok: true });
+
+  const folderMissing = await fetch(`${origin}/dsh-tts-chat-answer/folder`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 2 }),
+  });
+  assert.equal(folderMissing.status, 404);
 
   const opened = await fetch(`${origin}/dsh-tts-chat-answer/open`, {
     method: "POST",
