@@ -163,6 +163,8 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   await mkdir(join(root, "workspace", "2026-11-19"), { recursive: true });
   const bytes = "fake mp3 bytes";
   await writeFile(audio, bytes);
+  await writeFile(join(root, "workspace", "2026-11-19", "answer.txt"), "transcript");
+  await writeFile(join(root, "workspace", "2026-11-19", "answer.json"), "{}");
   await writeFile(join(root, "index.jsonl"), `${JSON.stringify({
     status: "done",
     sessionId: "session-1",
@@ -214,6 +216,7 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   apply(ctx, { enabled: true, outputDir: root, openCommand: "/bin/true" });
   assert.deepEqual([...routes.keys()].sort(), [
     "/dsh-tts-chat-answer/audio",
+    "/dsh-tts-chat-answer/delete",
     "/dsh-tts-chat-answer/folder",
     "/dsh-tts-chat-answer/generate",
     "/dsh-tts-chat-answer/open",
@@ -305,6 +308,26 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
   assert.equal(opened.status, 200);
   assert.deepEqual(await opened.json(), { ok: true, mode: "inline" });
 
+  const deleted = await fetch(`${origin}/dsh-tts-chat-answer/delete`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  });
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(await deleted.json(), { ok: true, removed: 1 });
+  for (const suffix of [".mp3", ".txt", ".json"]) {
+    assert.equal(await stat(join(root, "workspace", "2026-11-19", `answer${suffix}`)).catch(() => null), null);
+  }
+  const afterDelete = await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=1`)
+    .then((response) => response.json());
+  assert.equal(afterDelete.state, "missing");
+  const deletedAgain = await fetch(`${origin}/dsh-tts-chat-answer/delete`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  });
+  assert.equal(deletedAgain.status, 404);
+
   webCtx.connection.requestRejection = () => 401;
   assert.equal((await fetch(target)).status, 401);
   assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/status?session=session-1&turn=1`)).status, 401);
@@ -319,6 +342,11 @@ test("host route serves, ranges, authenticates, and reports missing audio", asyn
     body: JSON.stringify({ session: "session-1", turn: 2 }),
   })).status, 401);
   assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/folder`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session: "session-1", turn: 1 }),
+  })).status, 401);
+  assert.equal((await fetch(`${origin}/dsh-tts-chat-answer/delete`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ session: "session-1", turn: 1 }),
