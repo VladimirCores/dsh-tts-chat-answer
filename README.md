@@ -56,7 +56,7 @@ setting afterwards so later installs keep the cooldown.
 After installing, run the interactive setup:
 
 ```bash
-npx -p dsh-tts-chat-answer dsh-tts-chat-answer-setup
+npx -p dsh-tts-chat-answer setup
 ```
 
 From a checkout, run `node setup.mjs` instead. The prompt asks for the profile,
