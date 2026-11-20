@@ -51,6 +51,19 @@ lockfile holds that version. Wait until the release is a day old, or set
 `~/.dsh/profiles/web/pnpm-workspace.yaml`) to install immediately. Restore the
 setting afterwards so later installs keep the cooldown.
 
+### Install from the market, step by step
+
+These captures follow the market install and the first generated answer.
+
+| Step | What happens | Screenshot |
+|:--:|---|---|
+| 1 | In **Plugins → Add plugin**, type `dsh-tts-chat-answer`, keep the npm registry, and press **Install**. | <img src="screenshots/market-1-add-plugin.png" width="440" alt="Add plugin dialog with the package name entered"> |
+| 2 | The dialog confirms **Installed** with the package version. Press **Enable now**; restart DSH if the row does not appear yet. | <img src="screenshots/market-2-installed.png" width="360" alt="Installed confirmation with an Enable now button"> |
+| 3 | A message written before the plugin existed has no audio, so its footer offers **Generate** instead of Play. | <img src="screenshots/market-3-generate.png" width="440" alt="Generate button under an older assistant answer"> |
+| 4 | The control reads **Generating…** and the hint reads `Preparing audio…` while the Host synthesizes the MP3. | <img src="screenshots/market-4-generating.png" width="360" alt="Generating state and preparing-audio hint"> |
+| 5 | When the file is saved, the control becomes **Play**. | <img src="screenshots/market-5-play.png" width="360" alt="Play button after generation finished"> |
+| 6 | During playback it shows **Pause**, **Stop**, and the elapsed position. | <img src="screenshots/market-6-playing.png" width="320" alt="Pause and Stop buttons with playback progress"> |
+
 ## Setup
 
 After installing, run the interactive setup:
