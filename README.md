@@ -3,17 +3,47 @@
 `dsh-tts-chat-answer` narrates every completed assistant answer from DeepSeek
 Harness and saves the audio locally for later playback and play from web UI.
 
-## Install
+## Contents
+
+- [Install from the market, step by step](#install-from-the-market-step-by-step)
+- [Install other ways](#install-other-ways)
+- [Setup](#setup)
+- [Storage](#storage)
+- [Playback](#playback)
+- [Voice choices](#voice-choices)
+- [Market index](#market-index)
+- [Publish a release](#publish-a-release)
+- [Requirements](#requirements)
+- [Configuration](#configuration)
+- [Privacy](#privacy)
+- [Test](#test)
+
+## Install from the market, step by step
 
 The package is a profile **bundle**: installing it also selects it as a layer.
-Pick one source.
-
-From the plugin market, add the index source under **Plugins → Discover → Add
-index source**:
+The quickest path is the DSH **Plugins** page. Custom index users add its source
+under **Plugins → Discover → Add index source** first:
 
 ```text
 https://vladimircores.github.io/dsh-tts-chat-answer/index.json
 ```
+
+Then follow the dialog through install and enable. These captures follow that
+flow and the first generated answer:
+
+| Step | What happens | Screenshot |
+|:--:|---|---|
+| 1 | In **Plugins → Add plugin**, type `dsh-tts-chat-answer`, keep the npm registry, and press **Install**. | <img src="screenshots/market-1-add-plugin.png" width="440" alt="Add plugin dialog with the package name entered"> |
+| 2 | The dialog confirms **Installed** with the package version. Press **Enable now**; restart DSH if the row does not appear yet. | <img src="screenshots/market-2-installed.png" width="360" alt="Installed confirmation with an Enable now button"> |
+| 3 | A message written before the plugin existed has no audio, so its footer offers **Generate** instead of Play. | <img src="screenshots/market-3-generate.png" width="440" alt="Generate button under an older assistant answer"> |
+| 4 | The control reads **Generating…** and the hint reads `Preparing audio…` while the Host synthesizes the MP3. | <img src="screenshots/market-4-generating.png" width="360" alt="Generating state and preparing-audio hint"> |
+| 5 | When the file is saved, the control becomes **Play**. | <img src="screenshots/market-5-play.png" width="360" alt="Play button after generation finished"> |
+| 6 | During playback it shows **Pause**, **Stop**, and the elapsed position. | <img src="screenshots/market-6-playing.png" width="320" alt="Pause and Stop buttons with playback progress"> |
+
+Prefer one image? [screenshots/social-card.png](screenshots/social-card.png) is the
+same walkthrough as a single 1200×1700 card for social posts.
+
+## Install other ways
 
 From npm, which serves the same tarball the market installs:
 
@@ -50,22 +80,6 @@ lockfile holds that version. Wait until the release is a day old, or set
 `minimumReleaseAge: 0` in the profile's `pnpm-workspace.yaml` (for example
 `~/.dsh/profiles/web/pnpm-workspace.yaml`) to install immediately. Restore the
 setting afterwards so later installs keep the cooldown.
-
-### Install from the market, step by step
-
-These captures follow the market install and the first generated answer.
-
-| Step | What happens | Screenshot |
-|:--:|---|---|
-| 1 | In **Plugins → Add plugin**, type `dsh-tts-chat-answer`, keep the npm registry, and press **Install**. | <img src="screenshots/market-1-add-plugin.png" width="440" alt="Add plugin dialog with the package name entered"> |
-| 2 | The dialog confirms **Installed** with the package version. Press **Enable now**; restart DSH if the row does not appear yet. | <img src="screenshots/market-2-installed.png" width="360" alt="Installed confirmation with an Enable now button"> |
-| 3 | A message written before the plugin existed has no audio, so its footer offers **Generate** instead of Play. | <img src="screenshots/market-3-generate.png" width="440" alt="Generate button under an older assistant answer"> |
-| 4 | The control reads **Generating…** and the hint reads `Preparing audio…` while the Host synthesizes the MP3. | <img src="screenshots/market-4-generating.png" width="360" alt="Generating state and preparing-audio hint"> |
-| 5 | When the file is saved, the control becomes **Play**. | <img src="screenshots/market-5-play.png" width="360" alt="Play button after generation finished"> |
-| 6 | During playback it shows **Pause**, **Stop**, and the elapsed position. | <img src="screenshots/market-6-playing.png" width="320" alt="Pause and Stop buttons with playback progress"> |
-
-Prefer one image? [screenshots/social-card.png](screenshots/social-card.png) is the
-same walkthrough as a single 1200×1700 card for social posts.
 
 ## Setup
 
@@ -199,7 +213,7 @@ Choose the last menu row to enter any other Edge voice id. The setup derives
 section lets you override it. The fallback is only used when Edge returns no
 audio for the primary voice.
 
-## Plugin market
+## Market index
 
 The package is published on npm as `dsh-tts-chat-answer` and declares
 `dsh.bundle`, an `engines.dsh` range, an icon, an English locale, and its
@@ -252,7 +266,8 @@ republishes `site/` on the next push.
 
 Expect a one-day gap before the new entry is installable: pnpm's default
 24-hour release-age cooldown rejects any version younger than that. The
-[Install](#install) note explains the workaround and when to restore the setting.
+[Install other ways](#install-other-ways) note explains the workaround and when
+to restore the setting.
 
 ## Requirements
 
