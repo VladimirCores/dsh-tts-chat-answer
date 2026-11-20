@@ -64,6 +64,9 @@ These captures follow the market install and the first generated answer.
 | 5 | When the file is saved, the control becomes **Play**. | <img src="screenshots/market-5-play.png" width="360" alt="Play button after generation finished"> |
 | 6 | During playback it shows **Pause**, **Stop**, and the elapsed position. | <img src="screenshots/market-6-playing.png" width="320" alt="Pause and Stop buttons with playback progress"> |
 
+Prefer one image? [screenshots/social-card.png](screenshots/social-card.png) is the
+same walkthrough as a single 1200×1700 card for social posts.
+
 ## Setup
 
 After installing, run the interactive setup:
