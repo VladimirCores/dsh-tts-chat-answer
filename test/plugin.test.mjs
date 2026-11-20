@@ -821,6 +821,12 @@ test("client bundle registers the turn-tail Play control", async () => {
   );
   assert.equal(controlTitle({ state: "ready" }, idleTitle), "Play narration");
   assert.equal(controlTitle({ state: "ready" }, { ...idleTitle, active: true, playing: true }), "Pause narration");
+
+  const { deleteLabel } = exported.__test;
+  assert.equal(deleteLabel(false, false), "Delete");
+  assert.equal(deleteLabel(true, false), "Confirm");
+  assert.equal(deleteLabel(false, true), "Deleting…");
+  assert.equal(deleteLabel(true, true), "Deleting…");
 });
 
 test("client inline player shares one audio element and resets on stop", async () => {
