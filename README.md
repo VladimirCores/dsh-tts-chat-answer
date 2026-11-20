@@ -316,10 +316,34 @@ to restore the setting.
 The bundle ships disabled so installing it does not immediately send chat
 answers anywhere. Enable it explicitly (the setup prompt asks) before use.
 
-`engine: "edge"` sends the **speech script of every assistant answer** to
-Microsoft's Edge TTS service. `redactSecrets` and code-block omission reduce
-exposure but are not a guarantee. If responses may contain confidential data,
-use `engine: "espeak"` (fully local) or disable the plugin.
+The plugin has no HTTP client of its own. The only outbound traffic is the
+`edge-tts` subprocess; audio files are written locally and served to the page
+only through the authenticated localhost route.
+
+- `engine: "edge"` (the default) sends the **speech script** of each narrated
+  answer to Microsoft's Edge read-aloud service
+  (`speech.platform.bing.com`) over TLS. It sends only text: the answer after
+  Markdown stripping, code-block omission, length truncation, and
+  `redactSecrets`. No audio, file paths, workspace names, or conversation
+  metadata leave the machine. Redaction is pattern-based, so it is a safety net,
+  not a guarantee.
+- `engine: "espeak"` runs `espeak-ng` and `ffmpeg` locally and sends nothing
+  over the network. Verified in an isolated network namespace: `edge-tts` fails
+  to connect while `espeak-ng` still produces audio.
+
+Fully local setup, including Russian:
+
+```yaml
+- id: tts-chat-answer
+  name: 'dsh-tts-chat-answer'
+  config:
+    enabled: true
+    engine: espeak
+    espeakVoice: ru
+```
+
+If answers may contain confidential data, use `engine: "espeak"` or leave the
+plugin disabled.
 
 ## Test
 
