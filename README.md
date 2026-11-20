@@ -86,10 +86,15 @@ setting afterwards so later installs keep the cooldown.
 After installing, run the interactive setup:
 
 ```bash
-npx -p dsh-tts-chat-answer setup
+npx -p dsh-tts-chat-answer@latest setup
 ```
 
-From a checkout, run `node setup.mjs` instead. The prompt asks for the profile,
+The `@latest` is deliberate: inside the plugin checkout, npm resolves the bare
+package name to the local project, whose bin is not linked, and the command
+fails with `setup: command not found`. In that directory run `node setup.mjs`
+instead, which is the same script.
+
+The prompt asks for the profile,
 the voice, and the playback mode, then writes a managed `tts-chat-answer`
 override into that profile's `cordis.patch.yml`. Restart the Host afterwards;
 `~/.local/share/dsh-tts-chat-answer/.ready` appears once the plugin mounts.
