@@ -284,6 +284,12 @@ to restore the setting.
   (GNOME Decibels, VLC, etc.). Without MPRIS the client falls back to the
   in-page player.
 
+**Platform:** developed and tested on **Fedora 45** (Linux). The native playback
+path (`busctl`/MPRIS), the `~/.local/bin/edge-tts` lookup, and the system opener
+are tuned to that environment. Other Linux distributions, desktop environments,
+macOS, and Windows are untested, so features may behave differently or not work
+as expected; the in-page player is the portable path.
+
 ## Configuration
 
 | key | default | meaning |
