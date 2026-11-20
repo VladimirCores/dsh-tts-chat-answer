@@ -158,14 +158,21 @@ POST /dsh-tts-chat-answer/generate
 A turn whose last attempt failed shows `Retry`. Generation uses the same queue,
 voice, and output layout as automatic narration.
 
-Once a turn has audio, a folder button at the right end of the control row opens
-the directory holding its MP3, transcript, and metadata in the system file
-manager:
+Once a turn has audio, the right end of the control row offers **Open** and
+**Delete**, both disabled until the MP3 exists:
 
 ```text
 POST /dsh-tts-chat-answer/folder
 {"session":"<session-id>","turn":<turn>}
+
+POST /dsh-tts-chat-answer/delete
+{"session":"<session-id>","turn":<turn>}   → {"ok":true,"removed":<n>}
 ```
+
+**Open** reveals the directory holding the MP3, transcript, and metadata in the
+system file manager. **Delete** stops playback, removes all three files for the
+turn, and marks it as having no narration, so the control falls back to
+**Generate**. Deletion is immediate — there is no confirmation prompt.
 
 `playMode: "inline"` (the default) plays in the Web UI through one shared
 `HTMLAudioElement`. The control becomes `Pause` while playing and `Resume`
